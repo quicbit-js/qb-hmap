@@ -49,7 +49,7 @@ HMap.prototype = {
         }
         var self = this
         var ret = []
-        Object.keys(this.by_hash).forEach(function (i_str) {
+        Object.keys(self.by_hash).forEach(function (i_str) {
             var hi = parseInt(i_str)
             ret.push([hi, 0])
             var col = self.by_hash_col[hi]
@@ -163,7 +163,7 @@ function KeySet (hash_fn, equal_fn, create_fn) {
     this.create_fn = create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
 }
 
-KeySet.prototype = extend(HMap.prototype, {
+KeySet.prototype = {
     HALT: HALT,
     constructor: KeySet,
 
@@ -189,12 +189,16 @@ KeySet.prototype = extend(HMap.prototype, {
         }
         return map.put_hc(hash, col + 1, arguments, this.create_fn)
     },
-    to_obj: function () {
-        err('not implemented')
-    }
-})
+
+    get length() { return this.map.length },
+    for_val: function (fn) { this.map.for_val(fn) },
+    vals: function () {return this.map.vals() },
+    collisions: function() { return this.map.collisions() },
+    to_obj: function () { return this.vals() }
+}
 
 module.exports = {
+    hash: hash,
     map: function (key_set, opt) { return new HMap(key_set, opt) },
-    key_set: function (opt) { return new KeySet(opt) },
+    key_set: function (hash_fn, equal_fn, create_fn) { return new KeySet(hash_fn, equal_fn, create_fn) },
 }

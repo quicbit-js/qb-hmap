@@ -43,6 +43,18 @@ function create_map(key_map, hc_vals, opt, create) {
     return map
 }
 
+test('hash', function (t) {
+    t.table_assert([
+        [ 'a',      'b',    'exp' ],
+        [ 1,        2,      35 ],
+        [ 35,       3,      1152 ],
+        [ 1152,     4,      38020 ],
+        [ 97,       98,     3299 ],
+        [ 3299,     99,     108832 ],
+        [ 108832,   99,     3591491 ],
+    ], hmap.hash)
+})
+
 test('hmap to_obj', function (t) {
     t.table_assert([
         [ 'hc_vals',                                              'opt', 'exp' ],
@@ -225,9 +237,6 @@ test('hmap put', function (t) {
 })
 
 test('hmap put_hc', function (t) {
-    var create_wrap = function (h, c) {
-        return {hash: h, col: c}
-    }
     var map_vals = [
         [0, 0, 'a'],
         [1, 0, 'b'],
@@ -263,4 +272,70 @@ test('hmap errors', function (t) {
     ], function (method, args) {
         map[method].apply(map, args)
     }, {assert:'throws'})
+})
+
+test('key_set', function (t) {
+    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
+    var equal_fn = function (prev, args) { return prev.v === args[0] }
+    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
+    t.table_assert([
+        [ 'keys',                 'opt', 'exp' ],
+        [ [],                     null,  [] ],
+        [ [ 'a' ],                null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'd' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+        [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+    ], function (keys, opt) {
+        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        keys.forEach(function (k) { kset.put_create(k) })
+        return kset.vals()
+    })
+})
+
+test('key_set to_obj()', function (t) {
+    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
+    var equal_fn = function (prev, args) { return prev.v === args[0] }
+    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
+    t.table_assert([
+        [ 'keys',                 'opt', 'exp' ],
+        [ [],                     null,  [] ],
+        [ [ 'a' ],                null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'd' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+        [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+    ], function (keys, opt) {
+        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        keys.forEach(function (k) { kset.put_create(k) })
+        return kset.to_obj()
+    })
+})
+
+test('key_set length', function (t) {
+    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
+    var equal_fn = function (prev, args) { return prev.v === args[0] }
+    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
+    t.table_assert([
+        [ 'keys',                 'opt', 'exp' ],
+        [ [],                     null,  0 ],
+        [ [ 'a' ],                null,  1 ],
+        [ [ 'a', 'a' ],           null,  1 ],
+        [ [ 'a', 'b' ],           null,  2 ],
+        [ [ 'a', 'b', 'a' ],      null,  2 ],
+        [ [ 'a', 'd' ],           null,  2 ],
+        [ [ 'a', 'd', 'a' ],      null,  2 ],
+        [ [ 'a', 'd', 'g' ],      null,  3 ],
+        [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
+    ], function (keys, opt) {
+        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        keys.forEach(function (k) { kset.put_create(k) })
+        return kset.length
+    })
 })
