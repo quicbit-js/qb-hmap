@@ -110,6 +110,28 @@ test('hmap collisions', function (t) {
         return map.collisions()
     })
 })
+
+test('hmap indexes', function (t) {
+    t.table_assert([
+        [ 'hc_vals',                                                'opt',   'exp' ],
+        [ [ [0, 0, 'a'] ],                                          null,    [ [0, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                null,    [ [0, 0], [1, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                null,    [ [0, 0], [1, 0], [1, 2] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   null,    [ [0, 0], [1, 0], [1, 1], [1, 2] ] ],
+        [ [ [0, 0, 'a'] ],                                          {insert_order:1},    [ [0, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0], [1, 2] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   {insert_order:1},    [ [0, 0], [1, 0], [1, 2], [1, 1] ] ],
+    ], function (hc_vals, opt) {
+        opt = assign( {test_mode: 1}, opt)
+        var map = hmap.map(null, opt)
+        hc_vals.forEach(function (hcv) {
+            map.put_hc(hcv[0], hcv[1], hcv[2])
+        })
+        return map.indexes
+    })
+})
+
 /*
 test('cache get', function (t) {
     t.table_assert([

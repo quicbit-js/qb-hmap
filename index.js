@@ -55,7 +55,9 @@ HMap.prototype = {
             var col = self.by_hash_col[hi]
             if (col) {
                 for (var ci = 0; ci< col.length; ci++) {
-                    ret.push([hi, ci + 1])
+                    if (col[ci] !== undefined) {
+                        ret.push([hi, ci + 1])
+                    }
                 }
             }
         })
