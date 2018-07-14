@@ -1,0 +1,36 @@
+{
+  "name": "qb-hmap",
+  "version": "1.0.0",
+  "description": "qb-hmap",
+  "homepage": "https://github.com/quicbit-js/qb-hmap",
+  "url": "https://github.com/quicbit-js/qb-hmap/issues",
+  "email": "support@quicbit.com",
+  "repository": "quicbit-js/qb-hmap",
+  "devDependencies": {
+    "tape": "^4.8.0",
+    "test-kit": "^2.7.2"
+  },
+  "dependencies": {
+    "qb-extend-flat": "^2.0.2"
+  },
+  "scripts": {
+    "test": "tape test.js",
+    "cov": "tap --coverage-report=html test.js"
+  },
+  "keywords": [
+    "fast",
+    "compact",
+    "minimal",
+    "qb",
+    "qb1",
+    "quicbit",
+    "data",
+    "performance"
+  ],
+  "files": [
+    "index.js",
+    "test.js"
+  ],
+  "author": "Matthew Voss",
+  "license": "ISC"
+}
