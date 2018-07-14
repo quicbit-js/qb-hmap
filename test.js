@@ -89,6 +89,27 @@ test('hmap no key_set: get', function (t) {
     })
 })
 
+test('hmap collisions', function (t) {
+    t.table_assert([
+        [ 'hc_vals',                                              'exp' ],
+        [ [ [0, 0, 'a'] ],                                        0 ],
+        [ [ [1, 0, 'b'] ],                                        0 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           0 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              0 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              0 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              0 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              1 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              2 ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2 ],
+    ], function (hc_vals, opt) {
+        opt = assign( {test_mode: 1}, opt)
+        var map = hmap.map(null, opt)
+        hc_vals.forEach(function (hcv) {
+            map.put_hc(hcv[0], hcv[1], hcv[2])
+        })
+        return map.collisions()
+    })
+})
 /*
 test('cache get', function (t) {
     t.table_assert([

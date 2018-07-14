@@ -131,10 +131,10 @@ HMap.prototype = {
         this.for_val(function (v) { ret.push(v) })
         return ret
     },
-    get collisions () {
+    collisions: function () {
         var ret = 0
         var by_hash_col = this.by_hash_col
-        Object.key_set(by_hash_col).forEach(function (i_str) {
+        Object.keys(by_hash_col).forEach(function (i_str) {
             var i = parseInt(i_str)
             ret += by_hash_col[i].length
         })
