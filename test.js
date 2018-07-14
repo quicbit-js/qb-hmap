@@ -155,10 +155,27 @@ test('hmap length', function (t) {
     })
 })
 
+test('hmap get', function (t) {
+    var map_vals = [
+        [0, 0, 'a'],
+        [1, 0, 'b'],
+        [1, 3, 'c'],
+        [1, 1, 'd']
+    ]
+    var map = create_map(null, map_vals)
+    t.table_assert([
+        [ 'h', 'c', 'exp' ],
+        [ 0,   0,   'a' ],
+        [ 0,   1,   undefined ],
+        [ 1,   0,   'b' ],
+        [ 1,   3,   'c' ],
+        [ 1,   4,   undefined ],
+    ], function (h, c, v, opt) {
+        return map.get({hash: h, col: c})
+    })
+})
+
 test('hmap put', function (t) {
-    var create_wrap = function (h, c) {
-        return {hash: h, col: c}
-    }
     var map_vals = [
         [0, 0, 'a'],
         [1, 0, 'b'],
