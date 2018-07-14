@@ -18,22 +18,6 @@ var test = require('test-kit').tape()
 var assign = require('qb-assign')
 var hmap = require('.')
 
-function str2bufs (s, sep) {
-    var src = new Buffer(s)
-    var sep_code = sep.charCodeAt(0)
-    var lim = src.length
-    var off = 0
-    var i = 0
-    var ret = []
-    while (i < lim) {
-        while (i < lim && src[i] !== sep_code) { i++ }
-        ret.push({src: src, off: off, lim: i})
-        i++
-        off = i
-    }
-    return ret
-}
-
 function create_map(key_map, hc_vals, opt, create) {
     opt = assign( {test_mode: 1}, opt)
     var map = hmap.map(key_map, opt)
