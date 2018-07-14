@@ -34,7 +34,38 @@ function str2bufs (s, sep) {
     return ret
 }
 
-test.only('hmap no key_set', function (t) {
+test('hmap no key_set: to_obj', function (t) {
+    t.table_assert([
+        [ 'hc_vals',                                              'opt', 'exp' ],
+        [ [ [0, 0, 'a'] ],                                        null,  [ 'a' ] ],
+        [ [ [1, 0, 'b'] ],                                        null,  [ 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           null,  [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              null,  [ 'c', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              null,  [ 'b', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              null,  [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], null,  [ 'a', 'b', 'd', 'c' ] ],
+        [ [ [0, 0, 'a'] ],                                        {insert_order:1},  [ 'a' ] ],
+        [ [ [1, 0, 'b'] ],                                        {insert_order:1},  [ 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           {insert_order:1},  [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              {insert_order:1},  [ 'c', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              {insert_order:1},  [ 'b', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              {insert_order:1},  [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:1},  [ 'a', 'b', 'c', 'd' ] ],
+    ], function (hc_vals, opt) {
+        opt = assign( {test_mode: 1}, opt)
+        var map = hmap.map(null, opt)
+        hc_vals.forEach(function (hcv) {
+            map.put_hc(hcv[0], hcv[1], hcv[2])
+        })
+        return map.to_obj()
+    })
+})
+
+test('hmap no key_set: get', function (t) {
     t.table_assert([
         [ 'hc_vals',                                    'opt',      'exp' ],
         [ [[0,0,'a']],                                  null,       ['a']  ],

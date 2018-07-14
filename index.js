@@ -34,7 +34,7 @@ function HMap (key_set, opt) {
     this.key_set = key_set || null
     this.by_hash = []
     this.by_hash_col = []
-    this._indexes = opt.use_indexes ? [] : null
+    this._indexes = opt.insert_order ? [] : null
 }
 
 HMap.prototype = {
