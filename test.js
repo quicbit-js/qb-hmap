@@ -15,6 +15,7 @@
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 var test = require('test-kit').tape()
+var assign = require('qb-assign')
 var hmap = require('.')
 
 function str2bufs (s, sep) {
@@ -33,23 +34,25 @@ function str2bufs (s, sep) {
     return ret
 }
 
-test('hmap put', function (t) {
+test.only('hmap no key_set', function (t) {
     t.table_assert([
-        [ 'input',                  'create',           'exp' ],
-        [ 'a',                      1,                  ['a'] ],
-        [ 'a,b,c',                  1,                  ['a','b','c'] ],
-        [ 'a,b,c,a',                1,                  ['a','b','c'] ],
-        [ 'a,b,c,a',                0,                  [] ],
-        [ '55,b,3s',                1,                  [ 'b', '55', '3s' ] ],    // collision
-        [ '3s,55,3s,55,4T',         1,                   [ '3s', '55', '4T' ] ],    // collision
-        [ '3s,55,3s,55',            1,                      [ '3s', '55' ] ],    // collision
-        [ 'd-loading-indicator,reactlet-calendar',    1,    [ 'd-loading-indicator', 'reactlet-calendar' ] ],    // collision
-    ], function (input, create) {
-        var cache = bufcache()
-        str2bufs(input, ',').forEach (function (b) {
-            cache.get(b.src, b.off, b.lim, create)
+        [ 'hc_vals',                                    'opt',      'exp' ],
+        [ [[0,0,'a']],                                  null,       ['a']  ],
+        [ [[1,0,'b']],                                  null,       ['b']  ],
+        [ [[0,0,'a'],[1,0,'b']],                        null,      ['a','b']  ],
+        [ [[0,0,'a'],[1,0,'b'],[0,0,'c']],              null,      ['c','b']  ],
+        [ [[0,0,'a'],[1,0,'b'],[0,0,'b']],              null,      ['b','b']  ],
+        [ [[0,0,'a'],[1,0,'b'],[1,0,'c']],              null,      ['a','c']  ],
+        [ [[0,0,'a'],[1,0,'b'],[1,1,'c']],              null,      ['a','b','c']  ],
+        [ [[0,0,'a'],[1,0,'b'],[1,2,'c']],              null,      ['a','b','c']  ],
+        [ [[0,0,'a'],[1,0,'b'],[1,2,'c'],[1,1,'d']],    null,      ['a','b','d','c']  ],
+    ], function (hc_vals, opt) {
+        opt = assign( {test_mode: 1}, opt)
+        var map = hmap.map(null, opt)
+        hc_vals.forEach(function (hcv) {
+            map.put_hc(hcv[0], hcv[1], hcv[2])
         })
-        return cache.to_obj()
+        return map.to_obj()
     })
 })
 

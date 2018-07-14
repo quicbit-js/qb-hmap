@@ -29,8 +29,9 @@ var HALT = {}           // object for stopping for_val processing
 
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
+    key_set || opt.test_mode || err('missing key_set')
     opt = opt || {}
-    this.key_set = key_set
+    this.key_set = key_set || null
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.use_indexes ? [] : null
@@ -46,11 +47,12 @@ HMap.prototype = {
         if (this._indexes) {
             return this._indexes
         }
+        var self = this
         var ret = []
         Object.keys(this.by_hash).forEach(function (i_str) {
             var hi = parseInt(i_str)
             ret.push([hi, 0])
-            var col = this.by_hash_col[hi]
+            var col = self.by_hash_col[hi]
             if (col) {
                 for (var ci = 0; ci< col.length; ci++) {
                     ret.push([hi, ci + 1])
@@ -106,31 +108,21 @@ HMap.prototype = {
             err('bad collision value: ' + c)
         }
     },
-    for_key_val: function (fn) {
-        var key_set = this.key_set || null
+    for_key_val: function (fn) { return this._for_key_val(fn, true) },
+    for_val: function (fn) { return this._for_key_val(fn, false) },
+    _for_key_val: function (fn, with_keys) {
+        var key_set = with_keys ? this.key_set : null
         var indexes = this.indexes
         for (var i=0; i<indexes.length; i++) {
             var idx = indexes[i]
-            var k = key_set && key_set === null ? idx : key_set.map.get_hc(idx[0], idx[1])
+            var k = key_set === null ? idx : key_set.map.get_hc(idx[0], idx[1])
             var v = (idx[1] === 0) ? this.by_hash[idx[0]] : this.by_hash_col[idx[0]][idx[1]-1]
-            if (fn(k, v, i) === HALT) {
-                break
+            if (v === undefined) {
+                continue
             }
-        }
-    },
-    // fn (val, i, hash, col)
-    for_val: function (fn) {
-        var indexes = this.indexes
-        for (var i=0; i < indexes.length; i++) {
-            var idx = indexes[i]
-            if (idx[1] === 0) {
-                if (fn(this.by_hash[idx[0]], i) === HALT) {
-                    return
-                }
-            } else {
-                if (fn(this.by_hash_col[idx[0]][idx[1]-1], i) === HALT) {
-                    return
-                }
+            var res = with_keys ? fn(k, v, i) : fn(v, i)
+            if (res === HALT) {
+                break
             }
         }
     },
