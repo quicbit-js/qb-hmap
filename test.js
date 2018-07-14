@@ -184,6 +184,8 @@ test('hmap errors', function (t) {
         [ 'put_hc',     [],                         /undefined value/ ],
         [ 'put_hc',     [undefined,0,'a'],          /invalid hash/ ],
         [ 'put_hc',     [1,undefined,'a'],          /invalid collision/ ],
+        [ 'get_hc',     [],                         /invalid hash/ ],
+        [ 'get_hc',     [1],                        /invalid collision/ ],
     ], function (method, args) {
         map[method].apply(map, args)
     }, {assert:'throws'})

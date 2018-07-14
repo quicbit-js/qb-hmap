@@ -100,14 +100,14 @@ HMap.prototype = {
     },
     // get by hash and collision
     get_hc: function (h, c) {
-        h >= 0 || err('bad hash: ' + h)
+        h >= 0 || err('invalid hash: ' + h)
         if (c === 0) {
             return this.by_hash[h]
         } else if (c > 0) {
             var cols = this.by_hash_col[h]
             return cols === undefined ? undefined : cols[c - 1]
         } else {
-            err('bad collision value: ' + c)
+            err('invalid collision: ' + c)
         }
     },
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
