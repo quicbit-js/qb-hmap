@@ -73,7 +73,7 @@ HMap.prototype = {
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
-            if (create_fn) { val = create_fn(prev, val, h, c) }
+            if (create_fn) { val = create_fn(h, c, prev, val) }
             this.by_hash[h] = val
         } else if (c > 0) {
             var cols = this.by_hash_col[h]
@@ -82,7 +82,7 @@ HMap.prototype = {
             } else {
                 prev = cols[c - 1]
             }
-            if (create_fn) { val = create_fn(prev, val, h, c) }
+            if (create_fn) { val = create_fn(h, c, prev, val) }
             cols[c - 1] = val
         } else {
             err ('invalid collision: ' + c)
