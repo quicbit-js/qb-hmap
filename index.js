@@ -69,7 +69,7 @@ HMap.prototype = {
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
         val !== undefined || err('cannot put undefined value')
-        h > 0 || h === 0 || err('bad hash: ' + h)
+        h > 0 || h === 0 || err('invalid hash: ' + h)
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
@@ -85,7 +85,7 @@ HMap.prototype = {
             if (create_fn) { val = create_fn(prev, val, h, c) }
             cols[c - 1] = val
         } else {
-            err ('invalid collision value: ' + c)
+            err ('invalid collision: ' + c)
         }
 
         if (prev === undefined) {
@@ -119,9 +119,6 @@ HMap.prototype = {
             var idx = indexes[i]
             var k = key_set === null ? idx : key_set.map.get_hc(idx[0], idx[1])
             var v = (idx[1] === 0) ? this.by_hash[idx[0]] : this.by_hash_col[idx[0]][idx[1]-1]
-            if (v === undefined) {
-                continue
-            }
             var res = with_keys ? fn(k, v, i) : fn(v, i)
             if (res === HALT) {
                 break
