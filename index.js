@@ -203,6 +203,7 @@ KeySet.prototype = {
 module.exports = {
     HALT: HALT,
     hash: hash,
-    map: function (key_set, opt) { return new HMap(key_set, opt) },
     key_set: function (hash_fn, equal_fn, create_fn) { return new KeySet(hash_fn, equal_fn, create_fn) },
+    _map: function (key_set, opt) { if (opt) opt.test_mode = 1; return new HMap(key_set, opt) },
+    _KeySet: KeySet,        // for custom extensions
 }
