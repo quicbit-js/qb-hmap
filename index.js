@@ -29,12 +29,12 @@ var HALT = {}           // object for stopping for_val processing
 
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
-    key_set || opt.test_mode || err('missing key_set')
     opt = opt || {}
+    key_set || opt.test_mode || err('missing key_set')
     this.key_set = key_set || null
     this.by_hash = []
     this.by_hash_col = []
-    this._indexes = opt.insert_order ? [] : null
+    this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
 }
 
 HMap.prototype = {
@@ -63,8 +63,8 @@ HMap.prototype = {
         })
         return ret
     },
-    put: function (key, val) {
-        return this.put_hc(key.hash, key.col, val)
+    put: function (key, val, create_fn) {
+        return this.put_hc(key.hash, key.col, val, create_fn)
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
@@ -167,6 +167,9 @@ KeySet.prototype = {
     HALT: HALT,
     constructor: KeySet,
 
+    create_map: function (opt) {
+        return new HMap(this, opt)
+    },
     // check this keyset for the given arguments (using hash_fn and equal_fn) and create/update
     put_create: function () {
         // figure collision value (col)
