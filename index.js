@@ -35,6 +35,7 @@ function HMap (key_set, opt) {
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
+    this._frozen = false
 }
 
 HMap.prototype = {
@@ -61,6 +62,9 @@ HMap.prototype = {
                 }
             }
         })
+        if (this._frozen) {
+            this._indexes = ret
+        }
         return ret
     },
     put: function (key, val, create_fn) {
@@ -68,6 +72,7 @@ HMap.prototype = {
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
+        !this._frozen || err('map is frozen')
         val !== undefined || err('cannot put undefined value')
         h > 0 || h === 0 || err('invalid hash: ' + h)
         var prev
@@ -139,6 +144,9 @@ HMap.prototype = {
         })
         return ret
     },
+    freeze: function () {
+        this._frozen = true
+    },
     to_obj: function () {
         var ret
         if (this.key_set) {
@@ -204,6 +212,7 @@ module.exports = {
     HALT: HALT,
     hash: hash,
     key_set: function (hash_fn, equal_fn, create_fn) { return new KeySet(hash_fn, equal_fn, create_fn) },
+    create: function (key_set, opt) { return new HMap(key_set, opt) },
     _map: function (key_set, opt) { if (opt) opt.test_mode = 1; return new HMap(key_set, opt) },
     _KeySet: KeySet,        // for custom extensions
 }
