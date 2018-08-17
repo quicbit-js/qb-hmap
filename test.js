@@ -280,6 +280,26 @@ test('key_set', function (t) {
     })
 })
 
+test('key_set put existing', function (t) {
+    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
+    var equal_fn = function (prev, args) { return prev.v === args[0] }
+    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
+    t.table_assert([
+        [ 'keys',                 'opt', 'exp' ],
+        [ [],                     null,  [] ],
+        [ [ 'a' ],                null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+    ], function (keys, opt) {
+        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var objs = keys.map(function (k) { return kset.put_create(k) })
+        var kset2 = hmap.key_set(hash_fn, equal_fn, create_fn)
+        objs.forEach(function (o) { kset2.put(o) })
+        return kset2.vals()
+    })
+})
+
 test('key_set to_obj()', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }

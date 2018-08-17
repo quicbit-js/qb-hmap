@@ -115,6 +115,29 @@ HMap.prototype = {
             err('invalid collision: ' + c)
         }
     },
+    same_hashes: function (b) {
+        var a = this
+        if (a.by_hash.length !== b.by_hash.length || a.by_hash_col.length !== b.by_hash_col.length) {
+            return false
+        }
+        var aind = a.indexes
+        if (a.indexes.length !== b.indexes.length) {
+            return false
+        }
+        for (var i=0; i<aind.length; i++) {
+            if (!b.by_hash[aind[i][0]]) {
+                return false
+            }
+            if (aind[i][1]) {
+                var ahash = aind[i][0]
+                var acol = aind[i][1]
+                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol])) {
+                    return false
+                }
+            }
+        }
+        return true
+    },
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
     for_val: function (fn) { return this._for_key_val(fn, false) },
     _for_key_val: function (fn, with_keys) {
@@ -199,6 +222,9 @@ KeySet.prototype = {
             }
         }
         return map.put_hc(hash, col + 1, arguments, this.create_fn)
+    },
+    put: function (val) {
+        this.map.put(val, val, null)
     },
 
     get length() { return this.map.length },
