@@ -228,6 +228,7 @@ KeySet.prototype = {
     },
 
     get length() { return this.map.length },
+    get_hc: function (h, c) { return this.map.get_hc(h, c) },
     for_val: function (fn) { this.map.for_val(fn) },
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
