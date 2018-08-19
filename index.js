@@ -34,7 +34,7 @@ function HMap (key_set, opt) {
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
     this._frozen = false
-    this._feeze_create_objects = opt._feeze_create_objects
+    this._feeze_create_objects = opt._feeze_create_objects      // setting this helps with debug inspection, especially for nested sets
 }
 
 HMap.prototype = {
