@@ -20,7 +20,7 @@ var hmap = require('.')
 
 function create_map(key_map, hc_vals, opt, create) {
     opt = assign( {test_mode: 1}, opt)
-    var map = hmap._create_map(key_map, opt)
+    var map = hmap._hmap(key_map, opt)
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2], create)
     })
@@ -61,7 +61,7 @@ test('hmap to_obj', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:1},  [ 'a', 'b', 'c', 'd' ] ],
     ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).to_obj()
+        return create_map(null, hc_vals, opt).vals()
     })
 })
 
@@ -216,7 +216,7 @@ test('hmap put', function (t) {
     ], function (h, c, v, opt) {
         var map = create_map(null, map_vals, opt)
         var ret = map.put({hash: h, col: c}, v)
-        return [ret, map.to_obj()]
+        return [ret, map.vals()]
     })
 })
 
@@ -241,7 +241,7 @@ test('hmap put_hc', function (t) {
     ], function (h, c, v, create1, opt) {
         var map = create_map(null, map_vals, opt)
         var ret = map.put_hc(h, c, v, create1 ? create_plus_one : null)
-        return [ret, map.to_obj()]
+        return [ret, map.vals()]
     })
 })
 test('hmap errors', function (t) {
@@ -258,7 +258,7 @@ test('hmap errors', function (t) {
     }, {assert:'throws'})
 })
 
-test('create_set', function (t) {
+test('hset', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -274,13 +274,13 @@ test('create_set', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.vals()
     })
 })
 
-test('create_set put existing', function (t) {
+test('hset put existing', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -292,15 +292,15 @@ test('create_set put existing', function (t) {
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
         var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = hmap.create_set(hash_fn, equal_fn, create_fn)
+        var kset2 = hmap.hset(hash_fn, equal_fn, create_fn)
         objs.forEach(function (o) { kset2.put(o) })
         return kset2.vals()
     })
 })
 
-test('create_set to_obj()', function (t) {
+test('hset to_obj()', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -316,13 +316,13 @@ test('create_set to_obj()', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
 })
 
-test('create_set length', function (t) {
+test('hset length', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -338,7 +338,7 @@ test('create_set length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.length
     })
