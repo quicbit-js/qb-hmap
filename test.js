@@ -18,9 +18,11 @@ var test = require('test-kit').tape()
 var assign = require('qb-assign')
 var hmap = require('.')
 
-function create_map(key_map, hc_vals, opt, create) {
+function create_map(master_set, hc_vals, opt, create) {
+    master_set = master_set || hmap.master(null, null, create, opt)
     opt = assign( {test_mode: 1}, opt)
-    var map = hmap.hmap(key_map, opt)
+
+    var map = master_set.hmap(opt)
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2], create)
     })
@@ -274,7 +276,7 @@ test('hset', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
+        var kset = hmap.master(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.vals()
     })
@@ -292,9 +294,9 @@ test('hset put existing', function (t) {
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
+        var kset = hmap.master(hash_fn, equal_fn, create_fn)
         var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = hmap.hset(hash_fn, equal_fn, create_fn)
+        var kset2 = hmap.master(hash_fn, equal_fn, create_fn)
         objs.forEach(function (o) { kset2.put(o) })
         return kset2.vals()
     })
@@ -316,7 +318,7 @@ test('hset to_obj()', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
+        var kset = hmap.master(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
@@ -338,7 +340,7 @@ test('hset length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = hmap.hset(hash_fn, equal_fn, create_fn)
+        var kset = hmap.master(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.length
     })

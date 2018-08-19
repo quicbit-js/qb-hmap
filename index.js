@@ -152,7 +152,7 @@ HMap.prototype = {
         var indexes = this.indexes
         for (var i=0; i<indexes.length; i++) {
             var idx = indexes[i]
-            var k = key_set === null ? idx : key_set.map.get_hc(idx[0], idx[1])
+            var k = key_set && key_set.map.get_hc(idx[0], idx[1]) || idx
             var v = (idx[1] === 0) ? this.by_hash[idx[0]] : this.by_hash_col[idx[0]][idx[1]-1]
             var res = with_keys ? fn(k, v, i) : fn(v, i)
             if (res === HALT) {
@@ -182,7 +182,6 @@ HMap.prototype = {
     },
     to_obj: function () {
         var ret = {}
-        var kset = this.key_set
         this.for_key_val(function (k, v) {
             var kobj = k.to_obj ? k.to_obj() : k
             ret[kobj.toString()] = v.to_obj ? v.to_obj() : v
@@ -191,16 +190,21 @@ HMap.prototype = {
     }
 }
 
-function HSet (hash_fn, equal_fn, create_fn, opt) {
-    this.map = new HMap(this)
-    this.hash_fn = hash_fn || err('no hash function')           // hash arguments to integer
-    this.equal_fn = equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
-    this.create_fn = create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
-    if (opt) {
-        // if defined, we get convenient from-object creation (though not efficient)
-        this.str2args_fn = opt.str2args_fn          // converts a string into arguments array (input into hash, equal, create)
-        this.freeze_create_objects = opt.freeze_create_objects
+// opt: {
+//    this.str2args_fn = opt.str2args_fn                        // convert a string into arguments array (arguments input for hash, equal, create)
+//    this.freeze_create_objects = opt.freeze_create_objects    // populate a readable _frozen_objects property when map or set is frozen (helps with manual inspection)
+// }
+
+function HSet (master, hash_fn, equal_fn, create_fn, opt) {
+    this.master = master
+    if (hash_fn || equal_fn || create_fn) {
+        this.hash_fn = hash_fn || err('no hash function')           // hash arguments to integer
+        this.equal_fn = equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
+        this.create_fn = create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
+        this._lazy_create = true
     }
+    this.opt = opt || {}
+    this.map = new HMap(this)
 }
 
 HSet.prototype = {
@@ -208,34 +212,45 @@ HSet.prototype = {
     constructor: HSet,
 
     hmap: function (opt) {
-        return new HMap(this, opt)
+        return new HMap(this.master || this, opt || this.opt)
     },
     hmap_from_obj: function (obj, opt) {
-        var ret = new HMap(this, opt)
+        var ret = new HMap(this.master || this, opt || this.opt)
         ret.put_obj(obj)
     },
-    // check this keyset for the given value arguments (using hash_fn and equal_fn) and create/update
-    put_create: function () {
-        this.create_fn || err('set has no create_fn defined')
+    // return a new set that delegates to this or this master for calls to put_create
+    hset: function (opt) {
+        return new HSet(this.master || this, null, null, null, opt || this.opt )
+    },
+    _put_create: function (args) {
         // figure collision value (col)
         var map = this.map
-        var hash = this.hash_fn(arguments)
+        var hash = this.hash_fn(args)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, arguments, this.create_fn)
+            return map.put_hc(hash, 0, args, this.create_fn)
         }
-        if (this.equal_fn(prev, arguments)) {
-            return map.put_hc(hash, 0, arguments, this.create_fn)
+        if (this.equal_fn(prev, args)) {
+            return map.put_hc(hash, 0, args, this.create_fn)
             // return (map.by_hash[hash] = this.create_fn(hash, 0, prev, arguments))    // faster?
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.equal_fn(cols[col], arguments)) {
+            while (col < cols.length && !this.equal_fn(cols[col], args)) {
                 col++
             }
         }
-        return map.put_hc(hash, col + 1, arguments, this.create_fn)
+        return map.put_hc(hash, col + 1, args, this.create_fn)
+    },
+    put_create: function () {
+        if (this.master) {
+            var obj = this.master.put_create(arguments)
+            return this.put_hc(obj.hash, obj.col, obj)
+        } else {
+            this._lazy_create || err('put_create requires defining hash_fn, equal_fn, and create_fn for the master set')
+            return this._put_create(arguments)
+        }
     },
     put: function (val) {
         this.map.put(val, val, null)
@@ -268,6 +283,5 @@ HSet.prototype = {
 module.exports = {
     HALT: HALT,
     hash: hash,
-    hmap: function (key_set, opt) { return new HMap(key_set, opt) },
-    hset: function (hash_fn, equal_fn, create_fn, opt) { return new HSet(hash_fn, equal_fn, create_fn, opt) },
+    master: function (hash_fn, equal_fn, create_fn, opt) { return new HSet(null, hash_fn, equal_fn, create_fn, opt) }
 }
