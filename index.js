@@ -187,16 +187,16 @@ HMap.prototype = {
     }
 }
 
-function KeySet (hash_fn, equal_fn, create_fn) {
+function HSet (hash_fn, equal_fn, create_fn) {
     this.map = new HMap(this)
     this.hash_fn = hash_fn || err('no hash function')           // hash arguments to integer
     this.equal_fn = equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
     this.create_fn = create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
 }
 
-KeySet.prototype = {
+HSet.prototype = {
     HALT: HALT,
-    constructor: KeySet,
+    constructor: HSet,
 
     create_map: function (opt) {
         return new HMap(this, opt)
@@ -229,6 +229,7 @@ KeySet.prototype = {
 
     get length() { return this.map.length },
     get_hc: function (h, c) { return this.map.get_hc(h, c) },
+    same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
     for_val: function (fn) { this.map.for_val(fn) },
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
@@ -238,8 +239,8 @@ KeySet.prototype = {
 module.exports = {
     HALT: HALT,
     hash: hash,
-    key_set: function (hash_fn, equal_fn, create_fn) { return new KeySet(hash_fn, equal_fn, create_fn) },
-    create: function (key_set, opt) { return new HMap(key_set, opt) },
-    _map: function (key_set, opt) { if (opt) opt.test_mode = 1; return new HMap(key_set, opt) },
-    _KeySet: KeySet,        // for custom extensions
+    create_set: function (hash_fn, equal_fn, create_fn) { return new HSet(hash_fn, equal_fn, create_fn) },
+    create_map: function (key_set, opt) { return new HMap(key_set, opt) },
+    _create_map: function (key_set, opt) { if (opt) opt.test_mode = 1; return new HMap(key_set, opt) },
+    _HSet: HSet,        // allow custom extensions of HSet
 }

@@ -20,7 +20,7 @@ var hmap = require('.')
 
 function create_map(key_map, hc_vals, opt, create) {
     opt = assign( {test_mode: 1}, opt)
-    var map = hmap._map(key_map, opt)
+    var map = hmap._create_map(key_map, opt)
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2], create)
     })
@@ -258,7 +258,7 @@ test('hmap errors', function (t) {
     }, {assert:'throws'})
 })
 
-test('key_set', function (t) {
+test('create_set', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -274,13 +274,13 @@ test('key_set', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.vals()
     })
 })
 
-test('key_set put existing', function (t) {
+test('create_set put existing', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -292,15 +292,15 @@ test('key_set put existing', function (t) {
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
         var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var kset2 = hmap.create_set(hash_fn, equal_fn, create_fn)
         objs.forEach(function (o) { kset2.put(o) })
         return kset2.vals()
     })
 })
 
-test('key_set to_obj()', function (t) {
+test('create_set to_obj()', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -316,13 +316,13 @@ test('key_set to_obj()', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
 })
 
-test('key_set length', function (t) {
+test('create_set length', function (t) {
     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
     var equal_fn = function (prev, args) { return prev.v === args[0] }
     var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
@@ -338,7 +338,7 @@ test('key_set length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = hmap.key_set(hash_fn, equal_fn, create_fn)
+        var kset = hmap.create_set(hash_fn, equal_fn, create_fn)
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.length
     })
