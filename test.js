@@ -20,7 +20,7 @@ var hmap = require('.')
 
 function create_map(key_map, hc_vals, opt, create) {
     opt = assign( {test_mode: 1}, opt)
-    var map = hmap._hmap(key_map, opt)
+    var map = hmap.hmap(key_map, opt)
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2], create)
     })

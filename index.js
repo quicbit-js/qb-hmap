@@ -14,8 +14,6 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-var extend = require('qb-extend-flat')
-
 // create hash from previous, buffer, and tcode
 function hash (a, b) {
     // h = ((h << 5) + h) + src[i]                 // djb2 - by berstein 269/289741 (3.0 seconds)
@@ -36,6 +34,7 @@ function HMap (key_set, opt) {
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
     this._frozen = false
+    this._feeze_create_objects = opt._feeze_create_objects
 }
 
 HMap.prototype = {
@@ -176,11 +175,18 @@ HMap.prototype = {
         return ret
     },
     freeze: function () {
+        if (this.freeze_create_objects) {
+            this._frozen_objects = this.to_obj()
+        }
         this._frozen = true
     },
     to_obj: function () {
         var ret = {}
-        this.for_key_val(function (k, v) { ret[k.toString()] = v })
+        var kset = this.key_set
+        this.for_key_val(function (k, v) {
+            var kobj = k.to_obj ? k.to_obj() : k
+            ret[kobj.toString()] = v.to_obj ? v.to_obj() : v
+        })
         return ret
     }
 }
@@ -193,6 +199,7 @@ function HSet (hash_fn, equal_fn, create_fn, opt) {
     if (opt) {
         // if defined, we get convenient from-object creation (though not efficient)
         this.str2args_fn = opt.str2args_fn          // converts a string into arguments array (input into hash, equal, create)
+        this.freeze_create_objects = opt.freeze_create_objects
     }
 }
 
@@ -209,6 +216,7 @@ HSet.prototype = {
     },
     // check this keyset for the given value arguments (using hash_fn and equal_fn) and create/update
     put_create: function () {
+        this.create_fn || err('set has no create_fn defined')
         // figure collision value (col)
         var map = this.map
         var hash = this.hash_fn(arguments)
@@ -242,7 +250,19 @@ HSet.prototype = {
     for_val: function (fn) { this.map.for_val(fn) },
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
-    to_obj: function () { return this.vals() }
+    freeze: function () {
+        if (this.freeze_create_objects) {
+            this._frozen_objects = this.to_obj()
+        }
+        this.map._frozen = true
+    },
+    to_obj: function () {
+        var ret = []
+        this.map.for_val(function (v) {
+            ret.push((v && v.to_obj) ? v.to_obj() : v)
+        })
+        return ret
+    }
 }
 
 module.exports = {
@@ -250,6 +270,4 @@ module.exports = {
     hash: hash,
     hmap: function (key_set, opt) { return new HMap(key_set, opt) },
     hset: function (hash_fn, equal_fn, create_fn, opt) { return new HSet(hash_fn, equal_fn, create_fn, opt) },
-    _hmap: function (key_set, opt) { if (opt) opt.test_mode = 1; return new HMap(key_set, opt) },
-    _HSet: HSet,    // allow custom extensions of HSet
 }
