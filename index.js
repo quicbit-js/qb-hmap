@@ -36,8 +36,14 @@ function for_sparse_val (a, fn) {
 
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
-    opt = opt || {}
     this.key_set = key_set || null
+    opt = assign({}, opt)
+    if (key_set) {
+        // inherit these specific options
+        opt.str2args_fn = key_set.string2args_fn || null
+        opt.validate_fn = key_set.validate_fn || null
+    }
+    this.opt = opt
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
@@ -75,6 +81,9 @@ HMap.prototype = {
         return ret
     },
     put: function (key, val, create_fn) {
+        if (this.opt.validate_fn) {
+            this.opt.validate_fn(key, val)
+        }
         return this.put_hc(key.hash, key.col, val, create_fn)
     },
     // create injects custom construction of values to be placed into the map
@@ -237,15 +246,15 @@ HMap.prototype = {
 
 function HSet (master, opt) {
     this.master = master
-    opt = opt || {}
-    if (opt.hash_fn || opt.equal_fn || opt.create_fn) {
-        this.hash_fn = opt.hash_fn || err('no hash function')           // hash arguments to integer
-        this.equal_fn = opt.equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
-        this.create_fn = opt.create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
+    var nopt = assign({}, master && master.opt, opt)
+    if (nopt.hash_fn || nopt.equal_fn || nopt.create_fn) {
+        this.hash_fn = nopt.hash_fn || err('no hash function')           // hash arguments to integer
+        this.equal_fn = nopt.equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
+        this.create_fn = nopt.create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
         this._lazy_create = true
     }
-    this.opt = opt || {}
-    this.map = new HMap(this, opt)
+    this.opt = nopt
+    this.map = new HMap(this)
 }
 
 HSet.prototype = {
@@ -261,12 +270,15 @@ HSet.prototype = {
     },
     // return a new set that delegates to this or this master for calls to put_create
     hset: function (opt) {
-        return new HSet(this.master || this, null, null, null, opt || this.opt )
+        return new HSet(this.master || this, null, null, null, opt )
     },
     get: function (v) {
         return this.map.get(v)
     },
     _put_create: function (args) {
+        if (this.opt.validate_args_fn) {
+            this.opt.validate_args_fn(args)
+        }
         // figure collision value (col)
         var map = this.map
         var hash = this.opt.hash_fn(args)

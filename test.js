@@ -336,7 +336,7 @@ test('hset length', function (t) {
     })
 })
 
-test.only('string_master', function (t) {
+test('string_master', function (t) {
     t.table_assert([
         [ 'vals',                   'exp' ],
         [ ['a', 'b', 'c'],          [ 'a','b','c' ] ],
