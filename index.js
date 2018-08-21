@@ -349,13 +349,13 @@ function add_stats (src, target) {
 }
 
 // a set that wraps string and handles conversion to/from arrays - commonly needed for testing
-function string_master (opt) {
-    var str_opt = {
+function string_set () {
+    return new HSet(null, {
         hash_fn: function str_hash (args) {
             var s = args[0]
             var h = 0
             for (var i = 0; i < s.length; i++) {
-                h = 0x7FFFFFFF & ((h * 33) ^ s[i])
+                h = 0x7FFFFFFF & ((h * 33) ^ s.charCodeAt(i))
             }
             return h
         },
@@ -366,9 +366,7 @@ function string_master (opt) {
             return prev || new Str(hash, col, args[0])
         },
         str2args_fn: function (s) { return [s] },
-        val2str_fn: function (v) { return v.s },
-    }
-    return new HMap(null, assign(opt, str_opt))
+    })
 }
 
 function Str (hash, col, s) {
@@ -386,6 +384,6 @@ Str.prototype = {
 module.exports = {
     HALT: HALT,
     hash: hash,
-    master: function (opt) { return new HSet(null, opt) },
-    string_master: string_master,
+    set: function (opt) { return new HSet(null, opt) },
+    string_set: string_set,
 }

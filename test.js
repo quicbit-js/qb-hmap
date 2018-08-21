@@ -19,7 +19,7 @@ var assign = require('qb-assign')
 var hmap = require('.')
 
 function create_map(master_set, hc_vals, opt) {
-    master_set = master_set || hmap.master()
+    master_set = master_set || hmap.set()
     var map = master_set.hmap(assign( {test_mode: 1}, opt))
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2])
@@ -168,7 +168,7 @@ test('hmap to_obj', function (t) {
         [ [ 'a' ],       { support_to_obj: 1 }, { a: 1 },       null,                   { a: 1 } ],
         [ [ 'a', 'd' ],  { support_to_obj: 1 }, { a: 1, d: 2 }, {include_stats:1},      { a: 1, d: 2, $collisions: 2 } ],
     ], function (master_vals, master_opt, hmap_vals, to_obj_opt) {
-        var master = master_mod3(master_opt)
+        var master = set_mod3(master_opt)
         var map = master.hmap()
         map.put_obj(hmap_vals)
         return map.to_obj(to_obj_opt)
@@ -275,7 +275,7 @@ test('hset', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = master_mod3()
+        var kset = set_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.vals()
     })
@@ -290,9 +290,9 @@ test('hset put existing', function (t) {
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys, opt) {
-        var kset = master_mod3()
+        var kset = set_mod3()
         var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = master_mod3()
+        var kset2 = set_mod3()
         objs.forEach(function (o) { kset2.put(o) })
         return kset2.vals()
     })
@@ -311,7 +311,7 @@ test('hset to_obj()', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = master_mod3()
+        var kset = set_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
@@ -330,18 +330,32 @@ test('hset length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = master_mod3()
+        var kset = set_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.length
     })
 })
 
-// return a master set that stores strings and creates collisions every 3rd value
-function master_mod3 (opt) {
+test.only('string_master', function (t) {
+    t.table_assert([
+        [ 'vals',                   'exp' ],
+        [ ['a', 'b', 'c'],          [ 'a','b','c' ] ],
+    ], function (vals) {
+        var sm = hmap.string_set()
+        vals.forEach(function (v) { sm.put_create(v) })
+        sm.collision_count() === 0 || err('unexpected collisions')
+        return sm.to_obj()
+    })
+})
+
+function err (msg) { throw Error(msg) }
+
+// return a set set that stores strings and creates collisions every 3rd value
+function set_mod3 (opt) {
     opt = opt || {}
     var to_obj_fn = opt.support_to_obj ? function () { return this.v } : null
 
-    return hmap.master(assign ({
+    return hmap.set(assign ({
         hash_fn: function (args) { return (args[0].charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
         equal_fn: function (prev, args) { return prev.v === args[0] },
         create_fn: function (h, c, prev, args) {
