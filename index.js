@@ -28,7 +28,6 @@ var HALT = {}           // object for stopping for_val processing
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
     opt = opt || {}
-    key_set || opt.test_mode || err('missing key_set')
     this.key_set = key_set || null
     this.by_hash = []
     this.by_hash_col = []
@@ -146,6 +145,17 @@ HMap.prototype = {
         return true
     },
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
+    for_key: function (fn) {
+        var key_set = this.key_set
+        var indexes = this.indexes
+        for (var i=0; i<indexes.length; i++) {
+            var idx = indexes[i]
+            var res = fn(key_set && key_set.map.get_hc(idx[0], idx[1]) || idx, i)
+            if (res === HALT) {
+                break
+            }
+        }
+    },
     for_val: function (fn) { return this._for_key_val(fn, false) },
     _for_key_val: function (fn, with_keys) {
         var key_set = with_keys ? this.key_set : null
@@ -181,10 +191,24 @@ HMap.prototype = {
         this._frozen = true
     },
     to_obj: function () {
-        var ret = {}
-        this.for_key_val(function (k, v) {
-            var kobj = k.to_obj ? k.to_obj() : k
-            ret[kobj.toString()] = v.to_obj ? v.to_obj() : v
+        var keys = []
+        var string_keys = true
+        this.for_key(function (k) {
+            k = k.to_obj ? k.to_obj() : k
+            if (typeof k !== 'string') {
+                string_keys = false
+            }
+            keys.push(k)
+        })
+        var ret = string_keys ? {} : []
+        this.for_val(function (v, i) {
+            v = v.to_obj ? v.to_obj() : v
+            var k = keys[i]
+            if (string_keys) {
+                ret[k] = v
+            } else {
+                ret.push([k, v])
+            }
         })
         return ret
     }
@@ -204,7 +228,7 @@ function HSet (master, hash_fn, equal_fn, create_fn, opt) {
         this._lazy_create = true
     }
     this.opt = opt || {}
-    this.map = new HMap(this)
+    this.map = new HMap(this, opt)
 }
 
 HSet.prototype = {
@@ -221,6 +245,9 @@ HSet.prototype = {
     // return a new set that delegates to this or this master for calls to put_create
     hset: function (opt) {
         return new HSet(this.master || this, null, null, null, opt || this.opt )
+    },
+    get: function (v) {
+        return this.map.get(v)
     },
     _put_create: function (args) {
         // figure collision value (col)
@@ -255,8 +282,20 @@ HSet.prototype = {
     put: function (val) {
         this.map.put(val, val, null)
     },
+    put_all: function (a) {
+        var map = this.map
+        if (Array.isArray(a)) {
+            for (var i=0; i<a.length; i++) {
+                map.put_hc(a[i].hash, a[i].col, a[i])
+            }
+        } else {
+            a.for_val(function (v) {
+                map.put_hc(v.hash, v.col, v)
+            })
+        }
+    },
     put_s: function (s) {
-        var str2args = this.str2args_fn || err('str2args_fn not defined')
+        var str2args = this.opt.str2args_fn || err('str2args_fn not defined')
         return this.put_create.apply(this, str2args(s))
     },
     get length() { return this.map.length },
