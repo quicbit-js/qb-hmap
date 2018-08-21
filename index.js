@@ -14,6 +14,8 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+var assign = require('qb-assign')
+
 // create hash from previous, buffer, and tcode
 function hash (a, b) {
     // h = ((h << 5) + h) + src[i]                 // djb2 - by berstein 269/289741 (3.0 seconds)
@@ -197,9 +199,6 @@ HMap.prototype = {
         return ret
     },
     freeze: function () {
-        if (this.freeze_create_objects) {
-            this._frozen_objects = this.to_obj()
-        }
         this._frozen = true
     },
     to_obj: function (opt) {
@@ -237,17 +236,13 @@ HMap.prototype = {
     }
 }
 
-// opt: {
-//    this.str2args_fn = opt.str2args_fn                        // convert a string into arguments array (arguments input for hash, equal, create)
-//    this.freeze_create_objects = opt.freeze_create_objects    // populate a readable _frozen_objects property when map or set is frozen (helps with manual inspection)
-// }
-
-function HSet (master, hash_fn, equal_fn, create_fn, opt) {
+function HSet (master, opt) {
     this.master = master
-    if (hash_fn || equal_fn || create_fn) {
-        this.hash_fn = hash_fn || err('no hash function')           // hash arguments to integer
-        this.equal_fn = equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
-        this.create_fn = create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
+    opt = opt || {}
+    if (opt.hash_fn || opt.equal_fn || opt.create_fn) {
+        this.hash_fn = opt.hash_fn || err('no hash function')           // hash arguments to integer
+        this.equal_fn = opt.equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
+        this.create_fn = opt.create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
         this._lazy_create = true
     }
     this.opt = opt || {}
@@ -275,23 +270,23 @@ HSet.prototype = {
     _put_create: function (args) {
         // figure collision value (col)
         var map = this.map
-        var hash = this.hash_fn(args)
+        var hash = this.opt.hash_fn(args)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, args, this.create_fn)
+            return map.put_hc(hash, 0, args, this.opt.create_fn)
         }
-        if (this.equal_fn(prev, args)) {
-            return map.put_hc(hash, 0, args, this.create_fn)
-            // return (map.by_hash[hash] = this.create_fn(hash, 0, prev, arguments))    // faster?
+        if (this.opt.equal_fn(prev, args)) {
+            return map.put_hc(hash, 0, args, this.opt.create_fn)
+            // return (map.by_hash[hash] = this.opt.create_fn(hash, 0, prev, arguments))    // faster?
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.equal_fn(cols[col], args)) {
+            while (col < cols.length && !this.opt.equal_fn(cols[col], args)) {
                 col++
             }
         }
-        return map.put_hc(hash, col + 1, args, this.create_fn)
+        return map.put_hc(hash, col + 1, args, this.opt.create_fn)
     },
     put_create: function () {
         if (this.master) {
@@ -318,7 +313,7 @@ HSet.prototype = {
         }
     },
     put_s: function (s) {
-        var str2args = this.opt.str2args_fn || err('str2args_fn not defined')
+        var str2args = this.opt.str2args_fn || err('str2args_fn must be defined to use put_s and put_obj')
         return this.put_create.apply(this, str2args(s))
     },
     get length() { return this.map.length },
@@ -328,9 +323,6 @@ HSet.prototype = {
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
     freeze: function () {
-        if (this.freeze_create_objects) {
-            this._frozen_objects = this.to_obj()
-        }
         this.map._frozen = true
     },
     to_obj: function () {
@@ -342,8 +334,44 @@ HSet.prototype = {
     }
 }
 
+// a set that wraps string and handles conversion to/from arrays - commonly needed for testing
+function string_master (opt) {
+    var str_opt = {
+        hash_fn: function str_hash (args) {
+            var s = args[0]
+            var h = 0
+            for (var i = 0; i < s.length; i++) {
+                h = 0x7FFFFFFF & ((h * 33) ^ s[i])
+            }
+            return h
+        },
+        equal_fn: function str_equal (sobj, args) {
+            return sobj.s === args[0]
+        },
+        create_fn: function str_create (hash, col, prev, args) {
+            return prev || new Str(hash, col, args[0])
+        },
+        str2args_fn: function (s) { return [s] },
+        val2str_fn: function (v) { return v.s },
+    }
+    return new HMap(null, assign(opt, str_opt))
+}
+
+function Str (hash, col, s) {
+    this.hash = hash
+    this.col = col
+    this.s = s
+}
+
+Str.prototype = {
+    constructor: Str,
+    toString: function () { return this.s },
+    to_obj: function () { return this.s }
+}
+
 module.exports = {
     HALT: HALT,
     hash: hash,
-    master: function (hash_fn, equal_fn, create_fn, opt) { return new HSet(null, hash_fn, equal_fn, create_fn, opt) }
+    master: function (opt) { return new HSet(null, opt) },
+    string_master: string_master,
 }

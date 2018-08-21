@@ -18,13 +18,11 @@ var test = require('test-kit').tape()
 var assign = require('qb-assign')
 var hmap = require('.')
 
-function create_map(master_set, hc_vals, opt, create) {
-    master_set = master_set || hmap.master(null, null, create, opt)
-    opt = assign( {test_mode: 1}, opt)
-
-    var map = master_set.hmap(opt)
+function create_map(master_set, hc_vals, opt) {
+    master_set = master_set || hmap.master()
+    var map = master_set.hmap(assign( {test_mode: 1}, opt))
     hc_vals.forEach(function (hcv) {
-        map.put_hc(hcv[0], hcv[1], hcv[2], create)
+        map.put_hc(hcv[0], hcv[1], hcv[2])
     })
     return map
 }
@@ -39,32 +37,6 @@ test('hash', function (t) {
         [ 3299,     99,     108832 ],
         [ 108832,   99,     3591491 ],
     ], hmap.hash)
-})
-
-test('hmap to_obj', function (t) {
-    t.table_assert([
-        [ 'hc_vals',                                              'opt', 'exp' ],
-        [ [ [0, 0, 'a'] ],                                        null,  [ 'a' ] ],
-        [ [ [1, 0, 'b'] ],                                        null,  [ 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           null,  [ 'a', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              null,  [ 'c', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              null,  [ 'b', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              null,  [ 'a', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:0}, [ 'a', 'b', 'd', 'c' ] ],
-        [ [ [0, 0, 'a'] ],                                        {insert_order:1},  [ 'a' ] ],
-        [ [ [1, 0, 'b'] ],                                        {insert_order:1},  [ 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           {insert_order:1},  [ 'a', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              {insert_order:1},  [ 'c', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              {insert_order:1},  [ 'b', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              {insert_order:1},  [ 'a', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:1},  [ 'a', 'b', 'c', 'd' ] ],
-    ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).vals()
-    })
 })
 
 test('hmap collisions', function (t) {
@@ -163,15 +135,62 @@ test('hmap for_key_val', function (t) {
 
 test('hmap vals', function (t) {
     t.table_assert([
-        [ 'hc_vals',                                                    'opt',      'exp' ],
-        [ [ [0, 0, 'a'] ],                                              null,       [ 'a' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                    null,       [ 'a', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],       { insert_order: 0 },       [ 'a', 'b', 'd', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],       { insert_order: 1 },       [ 'a', 'b', 'c', 'd' ] ],
+        [ 'hc_vals',                                              'opt', 'exp' ],
+        [ [ [0, 0, 'a'] ],                                        null,  [ 'a' ] ],
+        [ [ [1, 0, 'b'] ],                                        null,  [ 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           null,  [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              null,  [ 'c', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              null,  [ 'b', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              null,  [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:0}, [ 'a', 'b', 'd', 'c' ] ],
+        [ [ [0, 0, 'a'] ],                                        {insert_order:1},  [ 'a' ] ],
+        [ [ [1, 0, 'b'] ],                                        {insert_order:1},  [ 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           {insert_order:1},  [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              {insert_order:1},  [ 'c', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              {insert_order:1},  [ 'b', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              {insert_order:1},  [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:1},  [ 'a', 'b', 'c', 'd' ] ],
     ], function (hc_vals, opt) {
         return create_map(null, hc_vals, opt).vals()
     })
 })
+
+// test('hmap to_obj', function (t) {
+//     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
+//     var equal_fn = function (prev, args) { return prev.v === args[0] }
+//     var create_fn = function (h, c, prev, args) { return prev || {hash: h, col: c, v: args[0] } }
+//     var str2args_fn = function (s) { return [s] }
+//
+//     t.table_assert([
+//         [ 'master',              'hmap',    'create_opt',        'to_obj_opt',        'exp' ],
+//         [ [ 'a' ],                {a: 1},         null,                null,                [ 'a' ] ],
+//         [ [ 'a', 'b' ],           {a:1, b:2},         null,                null,                [ 'a', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              [],         null,                null,                [ 'c', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              [],         null,                null,                [ 'b', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              [],         null,                null,                [ 'a', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              [],         null,                null,                [ 'a', 'b', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [],         null,                null,                [ 'a', 'b', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [],         { insert_order: 0 }, null,                [ 'a', 'b', 'd', 'c' ] ],
+//         // [ [ [0, 0, 'a'] ],                                        [],         { insert_order: 1 }, null,                [ 'a' ] ],
+//         // [ [ [1, 0, 'b'] ],                                        [],         { insert_order: 1 }, null,                [ 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           [],         { insert_order: 1 }, null,                [ 'a', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'c', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              [],         { insert_order: 1 }, null,                [ 'b', 'b' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c' ] ],
+//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c', 'd' ] ],
+//     ], function (master_vals, hmap_vals, create_opt, to_obj_opt) {
+//         var master = hmap.master(hash_fn, equal_fn, create_fn, {str2args_fn: str2args_fn})
+//         var map = master.hmap(create_opt)
+//         map.put_obj(hmap_vals)
+//         return map.to_obj(to_obj_opt)
+//     })
+// })
 
 test('hmap length', function (t) {
     t.table_assert([
@@ -261,9 +280,6 @@ test('hmap errors', function (t) {
 })
 
 test('hset', function (t) {
-    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-    var equal_fn = function (prev, args) { return prev.v === args[0] }
-    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
     t.table_assert([
         [ 'keys',                 'opt', 'exp' ],
         [ [],                     null,  [] ],
@@ -276,16 +292,13 @@ test('hset', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.master(hash_fn, equal_fn, create_fn)
+        var kset = master_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.vals()
     })
 })
 
 test('hset put existing', function (t) {
-    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-    var equal_fn = function (prev, args) { return prev.v === args[0] }
-    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
     t.table_assert([
         [ 'keys',                 'opt', 'exp' ],
         [ [],                     null,  [] ],
@@ -294,18 +307,15 @@ test('hset put existing', function (t) {
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.master(hash_fn, equal_fn, create_fn)
+        var kset = master_mod3()
         var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = hmap.master(hash_fn, equal_fn, create_fn)
+        var kset2 = master_mod3()
         objs.forEach(function (o) { kset2.put(o) })
         return kset2.vals()
     })
 })
 
 test('hset to_obj()', function (t) {
-    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-    var equal_fn = function (prev, args) { return prev.v === args[0] }
-    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
     t.table_assert([
         [ 'keys',                 'opt', 'exp' ],
         [ [],                     null,  [] ],
@@ -318,16 +328,13 @@ test('hset to_obj()', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = hmap.master(hash_fn, equal_fn, create_fn)
+        var kset = master_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
 })
 
 test('hset length', function (t) {
-    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-    var equal_fn = function (prev, args) { return prev.v === args[0] }
-    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
     t.table_assert([
         [ 'keys',                 'opt', 'exp' ],
         [ [],                     null,  0 ],
@@ -340,8 +347,17 @@ test('hset length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = hmap.master(hash_fn, equal_fn, create_fn)
+        var kset = master_mod3()
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.length
     })
 })
+
+// return a master set that stores strings and creates collisions every 3rd value
+function master_mod3 () {
+    return hmap.master({
+        hash_fn: function (args) { return (args[0].charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
+        equal_fn: function (prev, args) { return prev.v === args[0] },
+        create_fn: function (h, c, prev, args) { return { hash: h, col: c, v: args[0] } },
+    })
+}
