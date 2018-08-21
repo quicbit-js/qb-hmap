@@ -198,11 +198,13 @@ HMap.prototype = {
         })
         return ret
     },
+    collision_count: function () {
+        return this.collisions().reduce(function (t, ca) { return t + ca.length }, 0 )
+    },
     freeze: function () {
         this._frozen = true
     },
     to_obj: function (opt) {
-        opt = opt ||{}
         var keys = []
         var string_keys = true
         this.for_key(function (k) {
@@ -213,24 +215,21 @@ HMap.prototype = {
             keys.push(k)
         })
         var ret
-        var collisions = 0
-        if (opt.include_stats) {
-            collisions = this.collisions().reduce(function (t, ca) { return t + ca.length }, 0 )
-        }
         if (string_keys) {
             ret = {}
             this.for_val(function (v, i) {
                 v = v.to_obj ? v.to_obj() : v
                 ret[keys[i]] = v
             })
-            if (collisions) { ret.$collisions = collisions }
         } else {
             ret = []
             this.for_val(function (v, i) {
                 v = v.to_obj ? v.to_obj() : v
                 ret.push([keys[i], v])
             })
-            if (collisions) { ret.push({$collisions: collisions}) }
+        }
+        if (opt && opt.include_stats) {
+            add_stats(this, ret)
         }
         return ret
     }
@@ -322,15 +321,30 @@ HSet.prototype = {
     for_val: function (fn) { this.map.for_val(fn) },
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
+    collision_count: function () { return this.map.collision_count() },
     freeze: function () {
         this.map._frozen = true
     },
-    to_obj: function () {
+    to_obj: function (opt) {
         var ret = []
         this.map.for_val(function (v) {
             ret.push((v && v.to_obj) ? v.to_obj() : v)
         })
+        if (opt && opt.include_stats) {
+            add_stats(this, ret)
+        }
         return ret
+    }
+}
+
+function add_stats (src, target) {
+    var collision_count = src.collision_count()
+    if (collision_count) {
+        if (Array.isArray(target)) {
+            target.push( {$collisions: collision_count})
+        } else {
+            target.$collisions = collision_count
+        }
     }
 }
 

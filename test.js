@@ -159,38 +159,21 @@ test('hmap vals', function (t) {
     })
 })
 
-// test('hmap to_obj', function (t) {
-//     var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-//     var equal_fn = function (prev, args) { return prev.v === args[0] }
-//     var create_fn = function (h, c, prev, args) { return prev || {hash: h, col: c, v: args[0] } }
-//     var str2args_fn = function (s) { return [s] }
-//
-//     t.table_assert([
-//         [ 'master',              'hmap',    'create_opt',        'to_obj_opt',        'exp' ],
-//         [ [ 'a' ],                {a: 1},         null,                null,                [ 'a' ] ],
-//         [ [ 'a', 'b' ],           {a:1, b:2},         null,                null,                [ 'a', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              [],         null,                null,                [ 'c', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              [],         null,                null,                [ 'b', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              [],         null,                null,                [ 'a', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              [],         null,                null,                [ 'a', 'b', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [],         null,                null,                [ 'a', 'b', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [],         { insert_order: 0 }, null,                [ 'a', 'b', 'd', 'c' ] ],
-//         // [ [ [0, 0, 'a'] ],                                        [],         { insert_order: 1 }, null,                [ 'a' ] ],
-//         // [ [ [1, 0, 'b'] ],                                        [],         { insert_order: 1 }, null,                [ 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           [],         { insert_order: 1 }, null,                [ 'a', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'c', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b'] ],              [],         { insert_order: 1 }, null,                [ 'b', 'b' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c' ] ],
-//         // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [],         { insert_order: 1 }, null,                [ 'a', 'b', 'c', 'd' ] ],
-//     ], function (master_vals, hmap_vals, create_opt, to_obj_opt) {
-//         var master = hmap.master(hash_fn, equal_fn, create_fn, {str2args_fn: str2args_fn})
-//         var map = master.hmap(create_opt)
-//         map.put_obj(hmap_vals)
-//         return map.to_obj(to_obj_opt)
-//     })
-// })
+test('hmap to_obj', function (t) {
+    t.table_assert([
+        [ 'master_vals', 'master_opt',          'hmap_vals',    'to_obj_opt',           'exp' ],
+        [ [ 'a' ],       null,                  { a: 1 },       null,                   [ [{hash:1,col:0,v:'a'}, 1] ] ],
+        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, null,                   [ [{hash:1,col:0,v:'a'}, 1], [{hash:2,col:0,v:'b'}, 2] ] ],
+        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, {include_stats:1},      [ [{hash:1,col:0,v:'a'}, 1], [{hash:2,col:0,v:'b'}, 2] ] ],
+        [ [ 'a' ],       { support_to_obj: 1 }, { a: 1 },       null,                   { a: 1 } ],
+        [ [ 'a', 'd' ],  { support_to_obj: 1 }, { a: 1, d: 2 }, {include_stats:1},      { a: 1, d: 2, $collisions: 2 } ],
+    ], function (master_vals, master_opt, hmap_vals, to_obj_opt) {
+        var master = master_mod3(master_opt)
+        var map = master.hmap()
+        map.put_obj(hmap_vals)
+        return map.to_obj(to_obj_opt)
+    })
+})
 
 test('hmap length', function (t) {
     t.table_assert([
@@ -354,10 +337,18 @@ test('hset length', function (t) {
 })
 
 // return a master set that stores strings and creates collisions every 3rd value
-function master_mod3 () {
-    return hmap.master({
+function master_mod3 (opt) {
+    opt = opt || {}
+    var to_obj_fn = opt.support_to_obj ? function () { return this.v } : null
+
+    return hmap.master(assign ({
         hash_fn: function (args) { return (args[0].charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
         equal_fn: function (prev, args) { return prev.v === args[0] },
-        create_fn: function (h, c, prev, args) { return { hash: h, col: c, v: args[0] } },
-    })
+        create_fn: function (h, c, prev, args) {
+            var ret = { hash: h, col: c, v: args[0] }
+            if (to_obj_fn) { ret.to_obj = to_obj_fn }
+            return ret
+        },
+        str2args_fn: function (s) { return [s] },
+    }, opt))
 }
