@@ -25,6 +25,13 @@ function hash (a, b) {
 function err (msg) { throw Error(msg) }
 var HALT = {}           // object for stopping for_val processing
 
+function for_sparse_val (a, fn) {
+    Object.keys(a).forEach(function (i_str) {
+        var i = parseInt(i_str)
+        fn (a[i], i)
+    })
+}
+
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
     opt = opt || {}
@@ -175,12 +182,17 @@ HMap.prototype = {
         this.for_val(function (v) { ret.push(v) })
         return ret
     },
+    // return arrays of colliding objects (for analysis)
     collisions: function () {
-        var ret = 0
+        var ret = []
+        var by_hash = this.by_hash
         var by_hash_col = this.by_hash_col
-        Object.keys(by_hash_col).forEach(function (i_str) {
-            var i = parseInt(i_str)
-            ret += by_hash_col[i].length
+        for_sparse_val (by_hash_col, function (by_col, h) {
+            var colliding = [by_hash[h]]
+            by_col.forEach(function (c) {
+                colliding.push(c)
+            })
+            ret.push(colliding)
         })
         return ret
     },
@@ -190,7 +202,8 @@ HMap.prototype = {
         }
         this._frozen = true
     },
-    to_obj: function () {
+    to_obj: function (opt) {
+        opt = opt ||{}
         var keys = []
         var string_keys = true
         this.for_key(function (k) {
@@ -200,16 +213,26 @@ HMap.prototype = {
             }
             keys.push(k)
         })
-        var ret = string_keys ? {} : []
-        this.for_val(function (v, i) {
-            v = v.to_obj ? v.to_obj() : v
-            var k = keys[i]
-            if (string_keys) {
-                ret[k] = v
-            } else {
-                ret.push([k, v])
-            }
-        })
+        var ret
+        var collisions = 0
+        if (opt.include_stats) {
+            collisions = this.collisions().reduce(function (t, ca) { return t + ca.length }, 0 )
+        }
+        if (string_keys) {
+            ret = {}
+            this.for_val(function (v, i) {
+                v = v.to_obj ? v.to_obj() : v
+                ret[keys[i]] = v
+            })
+            if (collisions) { ret.$collisions = collisions }
+        } else {
+            ret = []
+            this.for_val(function (v, i) {
+                v = v.to_obj ? v.to_obj() : v
+                ret.push([keys[i], v])
+            })
+            if (collisions) { ret.push({$collisions: collisions}) }
+        }
         return ret
     }
 }
