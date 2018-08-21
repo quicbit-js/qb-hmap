@@ -18,9 +18,8 @@ var test = require('test-kit').tape()
 var assign = require('qb-assign')
 var hmap = require('.')
 
-function create_map(master_set, hc_vals, opt) {
-    master_set = master_set || hmap.set()
-    var map = master_set.hmap(assign( {test_mode: 1}, opt))
+function create_map(hc_vals, opt) {
+    var map = hmap.string_set(opt).hmap()
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2])
     })
@@ -52,23 +51,23 @@ test('hmap collisions', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [ ['b', 'c'] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [ ['b', 'd', 'c'] ] ],
     ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).collisions()
+        return create_map(hc_vals, opt).collisions()
     })
 })
 
 test('hmap indexes', function (t) {
     t.table_assert([
         [ 'hc_vals',                                                'opt',   'exp' ],
-        [ [ [0, 0, 'a'] ],                                          null,    [ [0, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                null,    [ [0, 0], [1, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                null,    [ [0, 0], [1, 0], [1, 2] ] ],
+        // [ [ [0, 0, 'a'] ],                                          null,    [ [0, 0] ] ],
+        // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                null,    [ [0, 0], [1, 0] ] ],
+        // [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                null,    [ [0, 0], [1, 0], [1, 2] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   {insert_order:0},    [ [0, 0], [1, 0], [1, 1], [1, 2] ] ],
         [ [ [0, 0, 'a'] ],                                          {insert_order:1},    [ [0, 0] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0], [1, 2] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   {insert_order:1},    [ [0, 0], [1, 0], [1, 2], [1, 1] ] ],
     ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).indexes
+        return create_map(hc_vals, opt).indexes
     })
 })
 
@@ -90,7 +89,7 @@ test('hmap for_val', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      { insert_order: 1 }, [ 'a', 'b' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order: 1 }, [ 'a', 'b', 'c', 'd' ] ],
     ], function (hc_vals, halt, opt) {
-        var map = create_map(null, hc_vals, opt)
+        var map = create_map(hc_vals, opt)
         var ret = []
         map.for_val(function (v, i) {
             if (i === halt) {
@@ -120,7 +119,7 @@ test('hmap for_key_val', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      { insert_order: 1 }, [ [0, 0], 'a', [1, 0], 'b' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order: 1 }, [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
     ], function (hc_vals, halt, opt) {
-        var map = create_map(null, hc_vals, opt)
+        var map = create_map(hc_vals, opt)
         var ret = []
         map.for_key_val(function (k, v, i) {
             if (i === halt) {
@@ -144,7 +143,7 @@ test('hmap vals', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              null,  [ 'a', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:0}, [ 'a', 'b', 'd', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:0},  [ 'a', 'b', 'd', 'c' ] ],
         [ [ [0, 0, 'a'] ],                                        {insert_order:1},  [ 'a' ] ],
         [ [ [1, 0, 'b'] ],                                        {insert_order:1},  [ 'b' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           {insert_order:1},  [ 'a', 'b' ] ],
@@ -155,7 +154,7 @@ test('hmap vals', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              {insert_order:1},  [ 'a', 'b', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:1},  [ 'a', 'b', 'c', 'd' ] ],
     ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).vals()
+        return create_map(hc_vals, opt).vals()
     })
 })
 
@@ -182,7 +181,7 @@ test('hmap length', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],       null,       4 ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],       { insert_order: 1 },       4 ],
     ], function (hc_vals, opt) {
-        return create_map(null, hc_vals, opt).length
+        return create_map(hc_vals, opt).length
     })
 })
 
@@ -193,7 +192,7 @@ test('hmap get', function (t) {
         [1, 3, 'c'],
         [1, 1, 'd']
     ]
-    var map = create_map(null, map_vals)
+    var map = create_map(map_vals)
     t.table_assert([
         [ 'h', 'c', 'exp' ],
         [ 0,   0,   'a' ],
@@ -218,7 +217,7 @@ test('hmap put', function (t) {
         [ 1,   4,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'c', 'e'] ] ],
         [ 1,   3,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'e'] ] ],
     ], function (h, c, v, opt) {
-        var map = create_map(null, map_vals, opt)
+        var map = create_map(map_vals, opt)
         var ret = map.put({hash: h, col: c}, v)
         return [ret, map.vals()]
     })
@@ -243,13 +242,13 @@ test('hmap put_hc', function (t) {
         [ 1,   4,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'c', 'f'] ] ],
         [ 1,   3,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'f'] ] ],
     ], function (h, c, v, create1, opt) {
-        var map = create_map(null, map_vals, opt)
+        var map = create_map(map_vals, opt)
         var ret = map.put_hc(h, c, v, create1 ? create_plus_one : null)
         return [ret, map.vals()]
     })
 })
 test('hmap errors', function (t) {
-    var map = create_map(null, [[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], {test_mode: 1, insert_order: 1})
+    var map = create_map([[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], {test_mode: 1, insert_order: 1})
     t.table_assert([
         [ 'method',     'args',                     'exp' ],
         [ 'put_hc',     [],                         /undefined value/ ],

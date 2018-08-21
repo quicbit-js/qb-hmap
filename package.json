@@ -9,7 +9,8 @@
   "devDependencies": {
     "tape": "^4.8.0",
     "test-kit": "^2.7.2",
-    "qb-assign": "^1.0.1"
+    "qb-assign": "^1.0.1",
+    "qb-extend-flat": "^2.0.2"
   },
   "dependencies": {
     "qb-extend-flat": "^2.0.2"
