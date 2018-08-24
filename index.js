@@ -37,13 +37,12 @@ function for_sparse_val (a, fn) {
 
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
-    this.opt = opt = opt || {}
+    this.opt = opt = (opt || {})
     this.key_set = key_set || null
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
     this._frozen = false
-    this._feeze_create_objects = opt._feeze_create_objects      // setting this helps with debug inspection, especially for nested sets
 }
 
 HMap.prototype = {
@@ -75,17 +74,27 @@ HMap.prototype = {
         }
         return ret
     },
+    first: function () {
+        var idx = this.indexes[0]
+        return idx && this.get_hc(idx[0], idx[1])
+    },
+    last: function () {
+        var indexes = this.indexes
+        if (indexes.length === 0) { return undefined }
+        var idx = indexes[indexes.length - 1]
+        return this.get_hc(idx[0], idx[1])
+    },
     put: function (key, val, create_fn) {
         var opt = this.key_set && this.key_set.opt || this.opt
-        if (opt.validate_fn) {
-            opt.validate_fn(key, val)
-        }
         return this.put_hc(key.hash, key.col, val, create_fn)
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
         !this._frozen || err('map is frozen')
         val !== undefined || err('cannot put undefined value')
+        if (this.opt.validate_fn) {
+            this.opt.validate_fn(val)
+        }
         h > 0 || h === 0 || err('invalid hash: ' + h)
         var prev
         if (c === 0) {
@@ -137,6 +146,7 @@ HMap.prototype = {
     },
     same_hashes: function (b) {
         var a = this
+        b = b.by_hash ? b : b.map       // accept sets
         if (a.by_hash.length !== b.by_hash.length || a.by_hash_col.length !== b.by_hash_col.length) {
             return false
         }
@@ -279,6 +289,8 @@ HSet.prototype = {
         return ret
     },
     get length() { return this.map.length },
+    first: function () { return this.map.first() },
+    last: function () { return this.map.last() },
     get_hc: function (h, c) { return this.map.get_hc(h, c) },
     same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
     for_val: function (fn) { this.map.for_val(fn) },
