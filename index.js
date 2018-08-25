@@ -154,14 +154,16 @@ HMap.prototype = {
         if (a.indexes.length !== b.indexes.length) {
             return false
         }
+
         for (var i=0; i<aind.length; i++) {
-            if (!b.by_hash[aind[i][0]]) {
-                return false
-            }
-            if (aind[i][1]) {
+            if (aind[i][1] === 0) {
+                if (!b.by_hash[aind[i][0]]) {
+                    return false
+                }
+            } else {
                 var ahash = aind[i][0]
                 var acol = aind[i][1]
-                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol])) {
+                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol-1])) {
                     return false
                 }
             }
