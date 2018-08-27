@@ -15,11 +15,10 @@
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 var test = require('test-kit').tape()
-var assign = require('qb-assign')
 var hmap = require('.')
 
 function create_map(hc_vals, opt) {
-    var map = hmap.string_set(opt).hmap()
+    var map = hmap.string_set(null, opt).hmap()
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2])
     })
@@ -247,6 +246,37 @@ test('hmap put_hc', function (t) {
         return [ret, map.vals()]
     })
 })
+
+test('freeze', function (t) {
+    var master = set_mod3({insert_order: false, support_to_obj: true})
+    var set = master.hset()
+
+    var map = master.hmap()
+    var xyz = set.put_s('xyz')
+
+    // with no insert order, indexes are stored only if input is frozen
+    t.same(set.to_obj(), ['xyz'])
+    t.same(set.map._indexes, null)
+    t.same(master.to_obj(), ['xyz'] )
+    t.same(master.map._indexes, null)
+    master.freeze()
+    t.same(master.to_obj(), ['xyz'] )
+    t.same(master.map._indexes, [ [ 0, 0 ] ])      // indexes are saved
+
+    t.throws(function () {set.put_s('pdq')}, /map is frozen/)
+    t.throws(function () {master.put_s('pdq')}, /map is frozen/)
+
+    map.put(xyz, 'something')
+    map.put_s('xyz', 'something else')
+    t.same(map.to_obj(), { xyz: 'something else'} )
+    map.freeze()
+    map.put_s('xyz', 'something else')       // no change - ok
+
+    t.throws(function () {map.put(xyz, 'something else else')}, /map is frozen/)
+    t.end()
+})
+
+
 test('hmap errors', function (t) {
     var map = create_map([[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], {test_mode: 1, insert_order: 1})
     t.table_assert([
@@ -335,33 +365,126 @@ test('hset length', function (t) {
     })
 })
 
-test('string_master', function (t) {
-    t.table_assert([
-        [ 'vals',                   'exp' ],
-        [ ['a', 'b', 'c'],          [ 'a','b','c' ] ],
-    ], function (vals) {
-        var sm = hmap.string_set()
-        vals.forEach(function (v) { sm.put_create(v) })
-        sm.collision_count() === 0 || err('unexpected collisions')
-        return sm.to_obj()
-    })
+test('validate', function (t) {
+    var master = hmap.string_set({validate_args_fn: function (args) {
+        if (args[0] === 'oh no!') { throw Error(args[0]) }
+    }})
+
+    master.put_s('ok')
+    master.put_s('all_good')
+    t.throws(function () {master.put_s('oh no!')}, /oh no!/)
+    t.same(master.to_obj(), [ 'ok', 'all_good' ])
+    t.end()
 })
 
-function err (msg) { throw Error(msg) }
+test('first and last', function (t) {
+    var master = hmap.string_set()
+    var set1 = master.hset()
+
+    var abc = ['a','b','c'].map(function (v) {return master.put_create(v)})
+    t.same(master.to_obj(), ['a','b','c'])
+    t.same(master.first(), { hash: 97, col: 0, s: 'a' })
+    t.same(master.last(), { hash: 99, col: 0, s: 'c' })
+
+    t.same(set1.first(), undefined)
+    t.same(set1.last(), undefined)
+    t.same(set1.to_obj(), [])
+    t.end()
+})
+
+test('various put and get', function (t) {
+    var master = hmap.string_set(null, {support_to_obj: 1})
+    var set1 = master.hset()
+    var aa = set1.put_create('aa')
+    t.same(set1.to_obj(), ['aa'])
+
+    var set2 = master.hset()
+    set2.put_all(set1)
+
+    t.same(set2.get(aa).to_obj(), 'aa')
+
+    var bb = master.put_s('bb')
+    var cc = master.put_s('cc')
+
+    set2.put_all([bb, cc])
+    t.same(set2.get(bb).to_obj(), 'bb')
+
+    t.end()
+})
+
+test('same_hashes', function (t) {
+    var master = hmap.string_set()
+    var set1 = master.hset()
+
+    t.same(master.same_hashes(set1), true)
+    t.same(set1.same_hashes(master), true)
+
+    var xxx = master.put_s('xxx')
+
+    t.same(master.map.same_hashes(set1), false)
+    t.same(set1.map.same_hashes(master), false)
+    t.same(set1.map.same_hashes(master.map), false)
+
+    set1.put_s('yyy')
+    t.same(master.map.same_hashes(set1), false)
+    t.same(set1.map.same_hashes(master), false)
+
+    set1.put(xxx)
+    t.same(master.map.same_hashes(set1), true)
+    t.same(set1.map.same_hashes(master), true)
+
+    // make different sets, but having the same hash array length (same highest value)
+    var set2 = master.hset()
+    set2.put_all(set1)
+    var a = set1.put_s('a')
+    var b = set2.put_s('b')
+
+    t.same(set1.same_hashes(set2), false)
+    t.same(set2.same_hashes(set1), false)
+
+    set1.put(b)
+    set2.put(a)
+
+
+    // create collisions (lower than xxx, yyy to test comparison after length checks)
+    // 4T, 3s, and 55 collide
+    set1.put_s('55')            // put highest colliding value in both sets (to get past length check on collisions)
+    set2.put_s('55')
+    t.same(set1.same_hashes(set2), true)
+
+    // put different lower colliding values in each set
+    set1.put_s('3s')
+    t.same(set1.to_obj({include_stats:1}), [ 'yyy', 'xxx', 'a', 'b', '55', '3s', { $collisions: 2 } ])
+    set2.put_s('4T')
+    t.same(set2.to_obj({include_stats:1}), [ 'yyy', 'xxx', 'b', 'a', '55', '4T', { $collisions: 2 } ])
+    t.same(set1.same_hashes(set2), false)
+    t.same(set2.same_hashes(set1), false)
+
+    // put same lower colliding values in each set
+    set1.put_s('4T')
+    t.same(set1.to_obj({include_stats:1}), [ 'yyy', 'xxx', 'a', 'b', '55', '3s', '4T', { $collisions: 3 } ])
+    set2.put_s('3s')
+    t.same(set2.to_obj({include_stats:1}), [ 'yyy', 'xxx', 'b', 'a', '55', '4T', '3s', { $collisions: 3 } ])
+    t.same(set1.same_hashes(set2), true)
+    t.same(set2.same_hashes(set1), true)
+
+    t.end()
+})
 
 // return a set set that stores strings and creates collisions every 3rd value
 function set_mod3 (opt) {
     opt = opt || {}
     var to_obj_fn = opt.support_to_obj ? function () { return this.v } : null
 
-    return hmap.set(assign ({
+    return hmap.set({
         hash_fn: function (args) { return (args[0].charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
         equal_fn: function (prev, args) { return prev.v === args[0] },
         create_fn: function (h, c, prev, args) {
+            if (prev) { return prev }
             var ret = { hash: h, col: c, v: args[0] }
             if (to_obj_fn) { ret.to_obj = to_obj_fn }
             return ret
         },
         str2args_fn: function (s) { return [s] },
-    }, opt))
+    }, opt)
 }

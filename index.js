@@ -37,8 +37,8 @@ function for_sparse_val (a, fn) {
 
 // values stored by hash, then by collision 'col'
 function HMap (key_set, opt) {
-    this.opt = opt = (opt || {})
-    this.key_set = key_set || null
+    this.opt = opt
+    this.key_set = key_set
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
@@ -85,12 +85,10 @@ HMap.prototype = {
         return this.get_hc(idx[0], idx[1])
     },
     put: function (key, val, create_fn) {
-        var opt = this.key_set && this.key_set.opt || this.opt
         return this.put_hc(key.hash, key.col, val, create_fn)
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
-        !this._frozen || err('map is frozen')
         val !== undefined || err('cannot put undefined value')
         if (this.opt.validate_fn) {
             this.opt.validate_fn(val)
@@ -100,7 +98,10 @@ HMap.prototype = {
         if (c === 0) {
             prev = this.by_hash[h]
             if (create_fn) { val = create_fn(h, c, prev, val) }
-            this.by_hash[h] = val
+            if (val !== prev) {
+                !this._frozen || err('map is frozen')
+                this.by_hash[h] = val
+            }
         } else if (c > 0) {
             var cols = this.by_hash_col[h]
             if (!cols) {
@@ -109,7 +110,10 @@ HMap.prototype = {
                 prev = cols[c - 1]
             }
             if (create_fn) { val = create_fn(h, c, prev, val) }
-            cols[c - 1] = val
+            if (val !== prev) {
+                !this._frozen || err('map is frozen')
+                cols[c - 1] = val
+            }
         } else {
             err ('invalid collision: ' + c)
         }
@@ -266,8 +270,8 @@ HSet.prototype = {
         return this.map.get(v)
     },
     put_create: function () {
-        var ret = this.master.put_create(arguments)
-        this.put_hc(ret.hash, ret.col, ret)
+        var ret = this.master._put_create(arguments)
+        this.put(ret)
         return ret
     },
     put: function (val) {
@@ -377,8 +381,8 @@ function add_stats (src, target) {
 }
 
 // a set that wraps string and handles conversion to/from arrays - commonly needed for testing
-function string_set (opt) {
-    return new MasterSet({
+function string_set (master_fns, opt) {
+    var default_fns = {
         hash_fn: function str_hash (args) {
             var s = args[0]
             var h = 0
@@ -394,7 +398,8 @@ function string_set (opt) {
             return prev || new Str(hash, col, args[0])
         },
         str2args_fn: function (s) { return [s] },
-    }, assign({}, opt))
+    }
+    return new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
 }
 
 function Str (hash, col, s) {
