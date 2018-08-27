@@ -254,8 +254,8 @@ HMap.prototype = {
 
 function HSet (master, opt) {
     this.master = master
-    this.opt = opt = assign({}, opt)
-    this.map = new HMap(master, opt)
+    this.opt = opt
+    this.map = new HMap(master || this, opt)
 }
 
 HSet.prototype = {
@@ -316,7 +316,7 @@ HSet.prototype = {
 
 // the master set is populated with all values in any offspring sets and hmaps.
 function MasterSet (master_fns, opt) {
-    HSet.call(this, this, opt || {})
+    HSet.call(this, null, opt)
     master_fns.hash_fn || err('no hash function')           // hash arguments to integer
     master_fns.equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
     master_fns.create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
@@ -394,7 +394,7 @@ function string_set (opt) {
             return prev || new Str(hash, col, args[0])
         },
         str2args_fn: function (s) { return [s] },
-    }, opt)
+    }, assign({}, opt))
 }
 
 function Str (hash, col, s) {
@@ -412,6 +412,6 @@ Str.prototype = {
 module.exports = {
     HALT: HALT,
     hash: hash,
-    set: function (opt) { return new MasterSet(opt) },
+    set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
 }
