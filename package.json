@@ -7,10 +7,10 @@
   "email": "support@quicbit.com",
   "repository": "quicbit-js/qb-hmap",
   "devDependencies": {
-    "tape": "^4.8.0",
-    "test-kit": "^2.7.2",
     "qb-assign": "^1.0.1",
-    "qb-extend-flat": "^2.0.2"
+    "qb-extend-flat": "^2.0.2",
+    "tape": "^4.8.0",
+    "test-kit": "^2.8.0"
   },
   "dependencies": {
     "qb-extend-flat": "^2.0.2"
