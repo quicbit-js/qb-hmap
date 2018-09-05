@@ -39,6 +39,7 @@ function for_sparse_val (a, fn) {
 function HMap (key_set, opt) {
     this.opt = opt
     this.key_set = key_set
+    this.master = key_set.master
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
@@ -257,7 +258,7 @@ HMap.prototype = {
 }
 
 function HSet (master, opt) {
-    this.master = master
+    this._master = master
     this.opt = opt
     this.map = new HMap(master || this, opt)
 }
@@ -266,11 +267,15 @@ HSet.prototype = {
     HALT: HALT,
     constructor: HSet,
 
+    // public master (always returns the master, which may be the set itself)
+    get master() {
+        return this._master || this
+    },
     get: function (v) {
         return this.map.get(v)
     },
     put_create: function () {
-        var ret = this.master._put_create(arguments)
+        var ret = this._master._put_create(arguments)
         this.put(ret)
         return ret
     },
@@ -290,7 +295,7 @@ HSet.prototype = {
         }
     },
     put_s: function (s) {
-        var ret = this.master.put_s(s)
+        var ret = this._master.put_s(s)
         this.put(ret)
         return ret
     },
@@ -414,9 +419,28 @@ Str.prototype = {
     to_obj: function () { return this.s }
 }
 
+function for_val (a, fn) {
+    if (a.for_val) {
+        a.for_val(fn)
+    } else {
+        a.forEach(fn)
+    }
+}
+
+function first (a) {
+    return a.first ? a.first(a) : a[0]
+}
+
+function last (a) {
+    return a.last ? a.last(a) : a[a.length-1]
+}
+
 module.exports = {
     HALT: HALT,
     hash: hash,
+    for_val: for_val,
+    first: first,
+    last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
 }
