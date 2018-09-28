@@ -201,6 +201,16 @@ HMap.prototype = {
             }
         }
     },
+    find: function (fn) {
+        var ret
+        this._for_key_val(function (v) {
+            if (fn(v)) {
+                ret = v
+                return HALT
+            }
+        })
+        return ret
+    },
     vals: function () {
         var ret = []
         this.for_val(function (v) { ret.push(v) })
@@ -305,6 +315,7 @@ HSet.prototype = {
     get_hc: function (h, c) { return this.map.get_hc(h, c) },
     same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
     for_val: function (fn) { this.map.for_val(fn) },
+    find: function (fn) { return this.map.find(fn) },
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
     collision_count: function () { return this.map.collision_count() },
