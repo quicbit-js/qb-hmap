@@ -265,17 +265,26 @@ test('freeze', function (t) {
 
     t.throws(function () {set.put_s('pdq')}, /map is frozen/)
     t.throws(function () {master.put_s('pdq')}, /map is frozen/)
-
-    map.put(xyz, 'something')
-    map.put_s('xyz', 'something else')
-    t.same(map.to_obj(), { xyz: 'something else'} )
-    map.freeze()
-    map.put_s('xyz', 'something else')       // no change - ok
-
-    t.throws(function () {map.put(xyz, 'something else else')}, /map is frozen/)
     t.end()
 })
 
+test('freeze collision', function (t) {
+    var master = set_mod3({insert_order: false, support_to_obj: true})
+    var map = master.hmap()
+    var log = console.log
+    map.put_s('a', 'aval')
+    map.put_s('b', 'bval')
+    map.put_s('c', 'cval')
+    map.put_s('d', 'dval')       // collision value
+    map.freeze()
+
+    var d = master.put_s('d')
+    t.same(map.get(d), 'dval', 'get d')
+    map.put(d, 'dval')              // ok, same as before
+
+    t.throws(function () {map.put(d, 'xxxxx')}, /map is frozen/, 'collision put')
+    t.end()
+})
 
 test('hmap errors', function (t) {
     var map = create_map([[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], {test_mode: 1, insert_order: 1})
@@ -329,18 +338,18 @@ test('hset put existing', function (t) {
 
 test('hset to_obj()', function (t) {
     t.table_assert([
-        [ 'keys',                 'opt', 'exp' ],
-        [ [],                     null,  [] ],
-        [ [ 'a' ],                null,  [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'd' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
-        [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
-    ], function (keys, opt) {
-        var kset = set_mod3()
+        [ 'keys',                 'support_to_obj', 'exp' ],
+        [ [],                     0,                 [] ],
+        [ [ 'a' ],                0,              [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'a' ],           0,              [ {hash: 1, col: 0, v: 'a'} ] ],
+        [ [ 'a', 'b' ],           0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'b', 'a' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ [ 'a', 'd' ],           0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'a' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
+        [ [ 'a', 'd', 'g' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+        [ [ 'a', 'd', 'g', 'd' ], 1,              [ 'a', 'd', 'g' ] ],
+    ], function (keys, support_to_obj) {
+        var kset = set_mod3({support_to_obj: support_to_obj})
         keys.forEach(function (k) { kset.put_create(k) })
         return kset.to_obj()
     })
@@ -359,20 +368,65 @@ test('hset length', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  3 ],
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
-        var kset = set_mod3()
-        keys.forEach(function (k) { kset.put_create(k) })
-        return kset.length
+        var set = set_mod3()
+        keys.forEach(function (k) { set.put_create(k) })
+        return set.length
+    })
+})
+
+test('for_val function', function (t) {
+    var set1 = hmap.string_set()
+    var vals = ['a','b']
+    hmap.for_val(vals, function (v, i) { t.same(vals[i], v, 'array iteration') })
+    hmap.for_val(vals, function (v) {
+        set1.put_s(v)
+    })
+    t.same(set1.to_obj(), vals, 'set has all values')
+
+    hmap.for_val(set1, function (v, i) { t.same(v.s, vals[i], 'vals[' + i + ']') })
+    t.end()
+})
+
+test('find', function (t) {
+    t.table_assert([
+        [ 'vals',                 'find_val',   'exp' ],
+        [ [],                     'x',          null ],
+        [ [ 'a' ],                'x',          null ],
+        [ [ 'a' ],                'a',          'a' ],
+        [ [ 'a', 'b', 'a' ],      'b',          'b' ],
+        [ [ 'a', 'b', 'a' ],      'a',          'a' ],
+    ], function (vals, find_val) {
+        var set = set_mod3()
+        vals.forEach(function (v) { set.put_create(v) })
+        var res = set.find(function (v) { return v.v === find_val })
+        return res && res.v || null
+    })
+})
+
+test('first and last functions', function (t) {
+    t.table_assert([
+        [ 'keys',                  'exp' ],
+        [ [],                      [undefined, undefined] ],
+        [ [ 'a' ],                 ['a', 'a'] ],
+        [ [ 'a', 'b', 'a' ],       ['a', 'b'] ],
+        [ [ 'a', 'b', 'c' ],       ['a', 'c'] ],
+        [ [ 'a', 'b', 'c', 'a' ],  ['a', 'c'] ],
+    ], function (vals) {
+        var set = hmap.string_set()
+        vals.forEach(function (v) {set.put_s(v)})
+
+        return [ hmap.first(set) && hmap.first(set).s, hmap.last(set) && hmap.last(set).s ]
     })
 })
 
 test('validate', function (t) {
     var master = hmap.string_set({validate_args_fn: function (args) {
-        if (args[0] === 'oh no!') { throw Error(args[0]) }
+        if (args[0] === 'oh no!') { throw Error('my validation error') }
     }})
 
     master.put_s('ok')
     master.put_s('all_good')
-    t.throws(function () {master.put_s('oh no!')}, /oh no!/)
+    t.throws(function () {master.put_s('oh no!')}, /my validation error/)
     t.same(master.to_obj(), [ 'ok', 'all_good' ])
     t.end()
 })
@@ -418,6 +472,7 @@ test('same_hashes', function (t) {
 
     t.same(master.same_hashes(set1), true)
     t.same(set1.same_hashes(master), true)
+    t.same(set1.same_hashes(master.map), true)
 
     var xxx = master.put_s('xxx')
 
