@@ -8,7 +8,7 @@
   "repository": "quicbit-js/qb-hmap",
   "devDependencies": {
     "tape": "^4.8.0",
-    "test-kit": "^2.8.4"
+    "test-kit": "^2.8.6"
   },
   "dependencies": {
     "qb-assign": "^1.0.1",
