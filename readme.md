@@ -1,29 +1,24 @@
 # qb-hmap
 
-A simple and very fast hashmap optimized for javascript.  The map uses the 
-"hash" and collision "col" integer properties of key objects to lookup values (one lookup except
-when their are collisions).
+A raw and very fast hashmap optimized for javascript, suitable for working with raw buffers.
 
-Keys used in an hmap need to have well-distributed .hash properties and need to have .col defined.  hmap
-provides the 'key_set()' function to aid with this construction.  key_set allows you to define hash, 
-equality, and object creation on an arbitrary array of arguments and applies these functions *minimally* and
-lazily.  What this means is that if you have a huge number of buffer slices to be turned into keys, your 
-provided functions can check existence in the hash (linear or constant time) only creating objects when
-needed.  In theory, javascript does this for you with string creation, but when working with UTF8 encodings, there
-can be significant overhead when parsing a buffer incurred by converting back and forth to strings.
+Javascript applications that parse large amounts of text in UTF8 can take a heavy performance penalty 
+converting to and from string objects.  [qb-json-next](https://github.com/quicbit-js/qb-json-next/) 
+is probably the lightest and fastest parsing solution, returning only integer tokens and integer ranges 
+and creating no objects as it parses.  But if and application needs to track, reduce and refine results,
+raw tokens and buffers and arrays are not enough - maps and sets are needed.
+qb-hmap offers a high performance solution for maps and sets on top of the raw buffer/token results.
 
-**key_set()** handles collision assignment and tracking of all keys to be used in your maps.
+qb-hmap supports buffer-reference objects that can point to 
+buffer segments and generate hash and collision values.  Actually, qb-hmap supports any 
+object that can attach **'hash'** and **'col'** (collision) integer properties.
 
-    var hmap = require('qb-hmap)
-    
-    var hash_fn = function (args) { return (args[0].charCodeAt(0) % 3) }  // creates collisions a..d..g..j...
-    var equal_fn = function (prev, args) { return prev.v === args[0] }
-    var create_fn = function (h, c, prev, args) { return {hash: h, col: c, v: args[0] } }
+An exposed hash and collision property, is also an advantage for storing and comparing
+*composed* objects.  With a good hash distribution and a simple collision management trick, most
+lookups are the cost of a just one integer array lookup and rarely two array lookups.  
 
-    var kset = hmap.key_set(
-Objects used as keys must provide their own well-distributed hash property.  Before using
-as a key, the object must be given a collision property by simply adding
-all in-scope objects to a master cache (a qb-map) using put_assign().  These objects can then 
-be used to create other maps that are extremely fast and efficient. 
- 
+
+# install
+
+npm install qb-hmap
 
