@@ -14,7 +14,7 @@ buffer segments and generate hash and collision values.  Actually, qb-hmap suppo
 object that can attach **'hash'** and **'col'** (collision) integer properties.
 
 An exposed hash and collision property, is also an advantage for storing and comparing
-*composed* objects.  With a good hash distribution and a simple collision management trick, most
+*composed* hash objects, such as Merkle Trees.  With a good hash distribution and a simple collision management trick, most
 lookups are the cost of a just one integer array lookup and rarely two array lookups.  
 
 
