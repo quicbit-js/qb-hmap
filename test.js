@@ -18,7 +18,7 @@ var test = require('test-kit').tape()
 var hmap = require('.')
 
 function create_map(hc_vals, opt) {
-    var map = hmap.string_set(null, opt).hmap()
+    var map = hmap.string_set(null, null, opt).hmap()
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2])
     })
@@ -49,8 +49,8 @@ test('hmap collisions', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              [ ['b', 'c'] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              [ ['b', 'c'] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], [ ['b', 'd', 'c'] ] ],
-    ], function (hc_vals, opt) {
-        return create_map(hc_vals, opt).collisions()
+    ], function (hc_vals) {
+        return create_map(hc_vals).collisions()
     })
 })
 
@@ -420,7 +420,7 @@ test('first and last functions', function (t) {
 })
 
 test('validate', function (t) {
-    var master = hmap.string_set({validate_args_fn: function (args) {
+    var master = hmap.string_set(null, {validate_args_fn: function (args) {
         if (args[0] === 'oh no!') { throw Error('my validation error') }
     }})
 
@@ -447,7 +447,7 @@ test('first and last', function (t) {
 })
 
 test('various put and get', function (t) {
-    var master = hmap.string_set(null, {support_to_obj: 1})
+    var master = hmap.string_set()
     var set1 = master.hset()
     var aa = set1.put_create('aa')
     t.same(set1.to_obj(), ['aa'])

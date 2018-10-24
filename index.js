@@ -396,8 +396,9 @@ function add_stats (src, target) {
     }
 }
 
-// a set that wraps string and handles conversion to/from arrays - commonly needed for testing
-function string_set (master_fns, opt) {
+// a set that wraps string with external 'hash' and 'col' properties.
+// Useful for testing with easy conversion to and from arrays of strings.
+function string_set (a, master_fns, opt) {
     var default_fns = {
         hash_fn: function str_hash (args) {
             var s = args[0]
@@ -415,7 +416,11 @@ function string_set (master_fns, opt) {
         },
         str2args_fn: function (s) { return [s] },
     }
-    return new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
+    var ret = new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
+    if (a) {
+        a.forEach(function (v) { ret.put_s(String(v)) })
+    }
+    return ret
 }
 
 function Str (hash, col, s) {
