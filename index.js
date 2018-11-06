@@ -414,6 +414,11 @@ function buf_equal (a, aoff, alim, b, boff, blim) {
 // (always creates buffer segments for js strings, but creates js strings only when requested to do so via to_obj()).
 function string_set (a, master_fns, opt) {
     var default_fns = {
+        validate_fn: function (buf) {
+            buf.src || err('missing buf.src')
+            buf.off != null || err('missing buf.off')
+            buf.lim != null || err('missing buf.lim')
+        },
         hash_fn: function (buf) {
             var src = buf.src
             var lim = buf.lim
