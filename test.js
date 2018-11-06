@@ -383,7 +383,7 @@ test('for_val function', function (t) {
     })
     t.same(set1.to_obj(), vals, 'set has all values')
 
-    hmap.for_val(set1, function (v, i) { t.same(v.s, vals[i], 'vals[' + i + ']') })
+    hmap.for_val(set1, function (v, i) { t.same(v.toString(), vals[i], 'vals[' + i + ']') })
     t.end()
 })
 
@@ -415,13 +415,13 @@ test('first and last functions', function (t) {
         var set = hmap.string_set()
         vals.forEach(function (v) {set.put_s(v)})
 
-        return [ hmap.first(set) && hmap.first(set).s, hmap.last(set) && hmap.last(set).s ]
+        return [ hmap.first(set) && hmap.first(set).toString(), hmap.last(set) && hmap.last(set).toString() ]
     })
 })
 
 test('validate', function (t) {
     var master = hmap.string_set(null, {validate_args_fn: function (args) {
-        if (args[0] === 'oh no!') { throw Error('my validation error') }
+        if (args[0].str === 'oh no!') { throw Error('my validation error') }
     }})
 
     master.put_s('ok')
@@ -435,21 +435,21 @@ test('first and last', function (t) {
     var master = hmap.string_set()
     var set1 = master.hset()
 
-    var abc = ['a','b','c'].map(function (v) {return master.put_create(v)})
-    t.same(master.to_obj(), ['a','b','c'])
-    t.same(master.first(), { hash: 97, col: 0, s: 'a' })
-    t.same(master.last(), { hash: 99, col: 0, s: 'c' })
+    var abc = ['a','b','c'].map(function (v) {return master.put_s(v)})
+    t.same(master.to_obj(), ['a','b','c'], 'to_obj()')
+    t.same(master.first(), { hash: 97, col: 0, src: { 0: 97 }, off: 0, lim: 1, str: 'a' }, 'first()')
+    t.same(master.last(), { hash: 99, col: 0, src: { 0: 99 }, off: 0, lim: 1, str: 'c' }, 'last()')
 
-    t.same(set1.first(), undefined)
-    t.same(set1.last(), undefined)
-    t.same(set1.to_obj(), [])
+    t.same(set1.first(), undefined, 'first() undefined')
+    t.same(set1.last(), undefined, 'last() undefined')
+    t.same(set1.to_obj(), [], 'to_obj() empty')
     t.end()
 })
 
 test('various put and get', function (t) {
     var master = hmap.string_set()
     var set1 = master.hset()
-    var aa = set1.put_create('aa')
+    var aa = set1.put_s('aa')
     t.same(set1.to_obj(), ['aa'])
 
     var set2 = master.hset()

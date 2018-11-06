@@ -355,29 +355,29 @@ MasterSet.prototype = extend(HSet.prototype, {
     put_create: function () {
         return this._put_create(arguments)
     },
-    _put_create: function (args) {
+    _put_create: function (pc_args) {
         if (this.master_fns.validate_args_fn) {
-            this.master_fns.validate_args_fn(args)
+            this.master_fns.validate_args_fn(pc_args)
         }
         // figure collision value (col)
         var map = this.map
-        var hash = this.master_fns.hash_fn(args)
+        var hash = this.master_fns.hash_fn(pc_args)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, args, this.master_fns.create_fn)
+            return map.put_hc(hash, 0, pc_args, this.master_fns.create_fn)
         }
-        if (this.master_fns.equal_fn(prev, args)) {
-            return map.put_hc(hash, 0, args, this.master_fns.create_fn)
+        if (this.master_fns.equal_fn(prev, pc_args)) {
+            return map.put_hc(hash, 0, pc_args, this.master_fns.create_fn)
             // return (map.by_hash[hash] = this.master_fns.create_fn(hash, 0, prev, arguments))    // faster?
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.master_fns.equal_fn(cols[col], args)) {
+            while (col < cols.length && !this.master_fns.equal_fn(cols[col], pc_args)) {
                 col++
             }
         }
-        return map.put_hc(hash, col + 1, args, this.master_fns.create_fn)
+        return map.put_hc(hash, col + 1, pc_args, this.master_fns.create_fn)
     },
     put_s: function (s) {
         var str2args = this.master_fns.str2args_fn || err('str2args_fn must be defined to use put_s and put_obj')
@@ -396,25 +396,45 @@ function add_stats (src, target) {
     }
 }
 
-// a set that wraps string with external 'hash' and 'col' properties.
-// Useful for testing with easy conversion to and from arrays of strings.
+// todo: move this to buffer lib and try end/begin/prime-cycling strategies on large buffers (find differences faster)
+function buf_equal (a, aoff, alim, b, boff, blim) {
+    var len = alim - aoff
+    if (blim - boff !== len) { return false }
+    if (aoff === boff) {
+        while (--alim >= aoff) { if (a[alim] !== b[alim]) return false }
+    } else {
+        var adj = alim - blim
+        while (--alim >= aoff) { if (a[alim] !== b[alim - adj]) return false }
+    }
+    return true
+}
+
+// a set that represents strings as utf8 buffers.  can be used with simple strings via put_s() or
+// with utf8 encoded buffer segments.  It is optimized for working with raw buffer segments
+// (always creates buffer segments for js strings, but creates js strings only when requested to do so via to_obj()).
 function string_set (a, master_fns, opt) {
     var default_fns = {
-        hash_fn: function str_hash (pc_args) {
-            var s = pc_args[0]
+        hash_fn: function (pc_args) {
+            var buf = pc_args[0]
+            var src = buf.src
+            var lim = buf.lim
             var h = 0
-            for (var i = 0; i < s.length; i++) {
-                h = 0x7FFFFFFF & ((h * 33) ^ s.charCodeAt(i))
+            for (var i = buf.off; i < lim; i++) {
+                h = 0x7FFFFFFF & ((h * 33) ^ src[i])
             }
             return h
         },
-        equal_fn: function str_equal (sobj, pc_args) {
-            return sobj.s === pc_args[0]
+        equal_fn: function (buf_obj, pc_args) {
+            var buf = pc_args[0]
+            return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, buf.src, buf.off, buf.lim)
         },
-        create_fn: function str_create (hash, col, prev, pc_args) {
-            return prev || new Str(hash, col, pc_args[0])
+        create_fn: function (hash, col, prev, pc_args) {
+            return prev || new StrBuf(hash, col, pc_args[0], this)
         },
-        str2args_fn: function (s) { return [s] },                           // string from put_s
+        str2args_fn: function (s) {     // used by put_s()
+            var src = new Uint8Array(Buffer.from(s))            // use same Uint8Array view for consistency
+            return [{src: src, off: 0, lim: src.length, str: s}]
+        },
     }
     var ret = new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
     if (a) {
@@ -423,16 +443,34 @@ function string_set (a, master_fns, opt) {
     return ret
 }
 
-function Str (hash, col, s) {
-    this.hash = hash
-    this.col = col
-    this.s = s
+function buf_to_str () {
+    if (this.str === null) {
+        this.str = Buffer.from(this.src, this.off, this.lim - this.off).toString()
+    }
+    return this.str
 }
 
-Str.prototype = {
-    constructor: Str,
-    toString: function () { return this.s },
-    to_obj: function () { return this.s }
+function StrBuf (hash, col, pc_args) {
+    this.hash = hash
+    this.col = col
+    var src = pc_args.src
+    var off = pc_args.off
+    var len = pc_args.lim - off
+    if (off !== 0 || len !== src.length) {
+        var nsrc = new Uint8Array(len)
+        for (var i = 0; i < len; i++) { nsrc[i] = src[off + i] }
+        src = nsrc
+    }
+    this.src = src
+    this.off = 0
+    this.lim = len
+    this.str = pc_args.str
+}
+
+StrBuf.prototype = {
+    constructor: StrBuf,
+    toString: buf_to_str,
+    to_obj: buf_to_str,
 }
 
 function for_val (a, fn) {
