@@ -420,7 +420,7 @@ test('first and last functions', function (t) {
 })
 
 test('validate', function (t) {
-    var master = hmap.string_set(null, {validate_args_fn: function (buf) {
+    var master = hmap.string_set(null, {validate_val_fn: function (buf) {
         if (buf.str === 'oh no!') { throw Error('my validation error') }
     }})
 

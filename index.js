@@ -284,8 +284,8 @@ HSet.prototype = {
     get: function (v) {
         return this.map.get(v)
     },
-    put_create: function () {
-        var ret = this._master._put_create(arguments)
+    put_create: function (v) {
+        var ret = this._master._put_create(v)
         this.put(ret)
         return ret
     },
@@ -356,8 +356,8 @@ MasterSet.prototype = extend(HSet.prototype, {
         return this._put_create(v)
     },
     _put_create: function (v) {
-        if (this.master_fns.validate_args_fn) {
-            this.master_fns.validate_args_fn(v)
+        if (this.master_fns.validate_val_fn) {
+            this.master_fns.validate_val_fn(v)
         }
         // figure collision value (col)
         var map = this.map
