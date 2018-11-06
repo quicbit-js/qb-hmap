@@ -85,8 +85,8 @@ HMap.prototype = {
         var idx = indexes[indexes.length - 1]
         return this.get_hc(idx[0], idx[1])
     },
-    put: function (key, val, create_fn) {
-        return this.put_hc(key.hash, key.col, val, create_fn)
+    put: function (key, val, create_key_fn, create_val_fn) {
+        return this.put_hc(key.hash, key.col, val, create_key_fn, create_val_fn)
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
@@ -337,9 +337,9 @@ HSet.prototype = {
 // the master set is populated with all values in any offspring sets and hmaps.
 function MasterSet (master_fns, opt) {
     HSet.call(this, null, opt)
-    master_fns.hash_fn || err('no hash function')       // fn (pc_args)        hash put_create() arguments to integer
-    master_fns.equal_fn || err('no equal function')     // fn (prev, pc_args)  compare prev object with put_create() args
-    master_fns.create_fn || err('no create function')   // fn (hash, col, prev, pc_args) create new object from put_create() args, hash, col...
+    master_fns.hash_fn || err('no hash function')     // fn (v)        hash put_create() arguments to integer
+    master_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare prev object with put_create() args
+    master_fns.create_fn || err('no create function') // fn (hash, col, prev, v) create new object from put_create() args, hash, col...
     this.master_fns = assign({}, master_fns)
 }
 
@@ -352,36 +352,36 @@ MasterSet.prototype = extend(HSet.prototype, {
     hset: function (opt) {
         return new HSet(this, assign({}, this.opt, opt))
     },
-    put_create: function () {
-        return this._put_create(arguments)
+    put_create: function (v) {
+        return this._put_create(v)
     },
-    _put_create: function (pc_args) {
+    _put_create: function (v) {
         if (this.master_fns.validate_args_fn) {
-            this.master_fns.validate_args_fn(pc_args)
+            this.master_fns.validate_args_fn(v)
         }
         // figure collision value (col)
         var map = this.map
-        var hash = this.master_fns.hash_fn(pc_args)
+        var hash = this.master_fns.hash_fn(v)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, pc_args, this.master_fns.create_fn)
+            return map.put_hc(hash, 0, v, this.master_fns.create_fn)
         }
-        if (this.master_fns.equal_fn(prev, pc_args)) {
-            return map.put_hc(hash, 0, pc_args, this.master_fns.create_fn)
+        if (this.master_fns.equal_fn(prev, v)) {
+            return map.put_hc(hash, 0, v, this.master_fns.create_fn)
             // return (map.by_hash[hash] = this.master_fns.create_fn(hash, 0, prev, arguments))    // faster?
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.master_fns.equal_fn(cols[col], pc_args)) {
+            while (col < cols.length && !this.master_fns.equal_fn(cols[col], v)) {
                 col++
             }
         }
-        return map.put_hc(hash, col + 1, pc_args, this.master_fns.create_fn)
+        return map.put_hc(hash, col + 1, v, this.master_fns.create_fn)
     },
     put_s: function (s) {
-        var str2args = this.master_fns.str2args_fn || err('str2args_fn must be defined to use put_s and put_obj')
-        return this.put_create.apply(this, str2args(s))
+        var str2val = this.master_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
+        return this.put_create(str2val(s))
     },
 })
 
@@ -414,8 +414,7 @@ function buf_equal (a, aoff, alim, b, boff, blim) {
 // (always creates buffer segments for js strings, but creates js strings only when requested to do so via to_obj()).
 function string_set (a, master_fns, opt) {
     var default_fns = {
-        hash_fn: function (pc_args) {
-            var buf = pc_args[0]
+        hash_fn: function (buf) {
             var src = buf.src
             var lim = buf.lim
             var h = 0
@@ -424,16 +423,15 @@ function string_set (a, master_fns, opt) {
             }
             return h
         },
-        equal_fn: function (buf_obj, pc_args) {
-            var buf = pc_args[0]
+        equal_fn: function (buf_obj, buf) {
             return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, buf.src, buf.off, buf.lim)
         },
-        create_fn: function (hash, col, prev, pc_args) {
-            return prev || new StrBuf(hash, col, pc_args[0], this)
+        create_fn: function (hash, col, prev, buf) {
+            return prev || new StrBuf(hash, col, buf, this)
         },
-        str2args_fn: function (s) {     // used by put_s()
+        str2val_fn: function (s) {     // used by put_s()
             var src = new Uint8Array(Buffer.from(s))            // use same Uint8Array view for consistency
-            return [{src: src, off: 0, lim: src.length, str: s}]
+            return {src: src, off: 0, lim: src.length, str: s}
         },
     }
     var ret = new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
@@ -450,12 +448,12 @@ function buf_to_str () {
     return this.str
 }
 
-function StrBuf (hash, col, pc_args) {
+function StrBuf (hash, col, buf) {
     this.hash = hash
     this.col = col
-    var src = pc_args.src
-    var off = pc_args.off
-    var len = pc_args.lim - off
+    var src = buf.src
+    var off = buf.off
+    var len = buf.lim - off
     if (off !== 0 || len !== src.length) {
         var nsrc = new Uint8Array(len)
         for (var i = 0; i < len; i++) { nsrc[i] = src[off + i] }
@@ -464,7 +462,7 @@ function StrBuf (hash, col, pc_args) {
     this.src = src
     this.off = 0
     this.lim = len
-    this.str = pc_args.str
+    this.str = buf.str
 }
 
 StrBuf.prototype = {

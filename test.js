@@ -420,8 +420,8 @@ test('first and last functions', function (t) {
 })
 
 test('validate', function (t) {
-    var master = hmap.string_set(null, {validate_args_fn: function (args) {
-        if (args[0].str === 'oh no!') { throw Error('my validation error') }
+    var master = hmap.string_set(null, {validate_args_fn: function (buf) {
+        if (buf.str === 'oh no!') { throw Error('my validation error') }
     }})
 
     master.put_s('ok')
@@ -532,14 +532,14 @@ function set_mod3 (opt) {
     var to_obj_fn = opt.support_to_obj ? function () { return this.v } : null
 
     return hmap.set({
-        hash_fn: function (args) { return (args[0].charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
-        equal_fn: function (prev, args) { return prev.v === args[0] },
-        create_fn: function (h, c, prev, args) {
+        hash_fn: function (s) { return (s.charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
+        equal_fn: function (prev, s) { return prev.v === s },
+        create_fn: function (h, c, prev, v) {
             if (prev) { return prev }
-            var ret = { hash: h, col: c, v: args[0] }
+            var ret = { hash: h, col: c, v: v }
             if (to_obj_fn) { ret.to_obj = to_obj_fn }
             return ret
         },
-        str2args_fn: function (s) { return [s] },
+        str2val_fn: function (s) { return s },
     }, opt)
 }
