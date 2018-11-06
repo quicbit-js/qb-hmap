@@ -337,9 +337,9 @@ HSet.prototype = {
 // the master set is populated with all values in any offspring sets and hmaps.
 function MasterSet (master_fns, opt) {
     HSet.call(this, null, opt)
-    master_fns.hash_fn || err('no hash function')           // hash arguments to integer
-    master_fns.equal_fn || err('no equal function')        // compare key with arguments (prev, arguments)
-    master_fns.create_fn || err('no create function')     // create key from (hash, col, prev, arguments)
+    master_fns.hash_fn || err('no hash function')       // fn (pc_args)        hash put_create() arguments to integer
+    master_fns.equal_fn || err('no equal function')     // fn (prev, pc_args)  compare prev object with put_create() args
+    master_fns.create_fn || err('no create function')   // fn (hash, col, prev, pc_args) create new object from put_create() args, hash, col...
     this.master_fns = assign({}, master_fns)
 }
 
@@ -400,21 +400,21 @@ function add_stats (src, target) {
 // Useful for testing with easy conversion to and from arrays of strings.
 function string_set (a, master_fns, opt) {
     var default_fns = {
-        hash_fn: function str_hash (args) {
-            var s = args[0]
+        hash_fn: function str_hash (pc_args) {
+            var s = pc_args[0]
             var h = 0
             for (var i = 0; i < s.length; i++) {
                 h = 0x7FFFFFFF & ((h * 33) ^ s.charCodeAt(i))
             }
             return h
         },
-        equal_fn: function str_equal (sobj, args) {
-            return sobj.s === args[0]
+        equal_fn: function str_equal (sobj, pc_args) {
+            return sobj.s === pc_args[0]
         },
-        create_fn: function str_create (hash, col, prev, args) {
-            return prev || new Str(hash, col, args[0])
+        create_fn: function str_create (hash, col, prev, pc_args) {
+            return prev || new Str(hash, col, pc_args[0])
         },
-        str2args_fn: function (s) { return [s] },
+        str2args_fn: function (s) { return [s] },                           // string from put_s
     }
     var ret = new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
     if (a) {
