@@ -36,10 +36,9 @@ function for_sparse_val (a, fn) {
 }
 
 // values stored by hash, then by collision 'col'
-function HMap (key_set, opt) {
+function HMap (master, opt) {
     this.opt = opt
-    this.key_set = key_set
-    this.master = key_set.master
+    this.master = master
     this.by_hash = []
     this.by_hash_col = []
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
@@ -90,11 +89,12 @@ HMap.prototype = {
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
+        // create_fn == null || create_fn === this.master.master_fns.create_fn || err('oops')
         val !== undefined || err('cannot put undefined value')
         if (this.opt.validate_fn) {
             this.opt.validate_fn(val)
         }
-        h > 0 || h === 0 || err('invalid hash: ' + h)
+        h >= 0 || err('invalid hash: ' + h)
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
@@ -128,11 +128,11 @@ HMap.prototype = {
     },
     put_obj: function (obj) {
         var self = this
-        var kset = this.key_set
+        var kset = this.master
         Object.keys(obj).forEach(function (k) { self.put(kset.put_s(k), obj[k]) })
     },
     put_s: function (s, v) {
-        this.put(this.key_set.put_s(s), v)
+        this.put(this.master.put_s(s), v)
     },
     get: function (key) {
         return this.get_hc(key.hash, key.col)
@@ -177,7 +177,7 @@ HMap.prototype = {
     },
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
     for_key: function (fn) {
-        var key_set = this.key_set
+        var key_set = this.master
         var indexes = this.indexes
         for (var i=0; i<indexes.length; i++) {
             var idx = indexes[i]
@@ -189,7 +189,7 @@ HMap.prototype = {
     },
     for_val: function (fn) { return this._for_key_val(fn, false) },
     _for_key_val: function (fn, with_keys) {
-        var key_set = with_keys ? this.key_set : null
+        var key_set = with_keys ? this.master : null
         var indexes = this.indexes
         for (var i=0; i<indexes.length; i++) {
             var idx = indexes[i]
