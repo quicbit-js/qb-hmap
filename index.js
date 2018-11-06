@@ -126,6 +126,7 @@ HMap.prototype = {
         }
         return val
     },
+    // put all keys and values of the given object
     put_obj: function (obj) {
         var self = this
         var kset = this.master
@@ -412,7 +413,7 @@ function buf_equal (a, aoff, alim, b, boff, blim) {
 // a set that represents strings as utf8 buffers.  can be used with simple strings via put_s() or
 // with utf8 encoded buffer segments.  It is optimized for working with raw buffer segments
 // (always creates buffer segments for js strings, but creates js strings only when requested to do so via to_obj()).
-function string_set (a, master_fns, opt) {
+function string_set (opt) {
     var default_fns = {
         validate_fn: function (buf) {
             buf.src || err('missing buf.src')
@@ -439,11 +440,7 @@ function string_set (a, master_fns, opt) {
             return {src: src, off: 0, lim: src.length, str: s}
         },
     }
-    var ret = new MasterSet(assign({}, default_fns, master_fns), assign({}, opt))
-    if (a) {
-        a.forEach(function (v) { ret.put_s(String(v)) })
-    }
-    return ret
+    return new MasterSet(assign({}, default_fns), assign({}, opt))
 }
 
 function buf_to_str () {

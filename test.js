@@ -18,7 +18,7 @@ var test = require('test-kit').tape()
 var hmap = require('.')
 
 function create_map(hc_vals, opt) {
-    var map = hmap.string_set(null, null, opt).hmap()
+    var map = hmap.string_set(opt).hmap()
     hc_vals.forEach(function (hcv) {
         map.put_hc(hcv[0], hcv[1], hcv[2])
     })
@@ -420,9 +420,11 @@ test('first and last functions', function (t) {
 })
 
 test('validate', function (t) {
-    var master = hmap.string_set(null, {validate_fn: function (buf) {
-        if (buf.str === 'oh no!') { throw Error('my validation error') }
-    }})
+    var master = hmap.string_set({
+        validate_fn: function (buf) {
+            if (buf.str === 'oh no!') { throw Error('my validation error') }
+        }
+    })
 
     master.put_s('ok')
     master.put_s('all_good')
