@@ -269,8 +269,8 @@ HMap.prototype = {
 }
 
 function HSet (master, opt) {
-    this._master = master
-    this.opt = opt
+    this.master = master
+    this.opt = assign({}, opt)
     this.map = new HMap(master || this, opt)
 }
 
@@ -279,14 +279,11 @@ HSet.prototype = {
     constructor: HSet,
 
     // public master (always returns the master, which may be the set itself)
-    get master() {
-        return this._master || this
-    },
     get: function (v) {
         return this.map.get(v)
     },
     put_create: function (v) {
-        var ret = this._master._put_create(v)
+        var ret = this.master.put_create(v)
         this.put(ret)
         return ret
     },
@@ -306,7 +303,7 @@ HSet.prototype = {
         }
     },
     put_s: function (s) {
-        var ret = this._master.put_s(s)
+        var ret = this.master.put_s(s)
         this.put(ret)
         return ret
     },
@@ -336,12 +333,12 @@ HSet.prototype = {
 }
 
 // the master set is populated with all values in any offspring sets and hmaps.
-function MasterSet (master_fns, opt) {
-    HSet.call(this, null, opt)
-    master_fns.hash_fn || err('no hash function')     // fn (v)        hash put_create() arguments to integer
-    master_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare prev object with put_create() args
-    master_fns.create_fn || err('no create function') // fn (hash, col, prev, v) create new object from put_create() args, hash, col...
-    this.master_fns = assign({}, master_fns)
+function MasterSet (value_fns, opt) {
+    HSet.call(this, this, opt)
+    value_fns.hash_fn || err('no hash function')     // fn (v)        hash put_create() arguments to integer
+    value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare prev object with put_create() args
+    value_fns.create_fn || err('no create function') // fn (hash, col, prev, v) create new object from put_create() args, hash, col...
+    this.value_fns = assign({}, value_fns)
 }
 
 MasterSet.prototype = extend(HSet.prototype, {
@@ -354,34 +351,31 @@ MasterSet.prototype = extend(HSet.prototype, {
         return new HSet(this, assign({}, this.opt, opt))
     },
     put_create: function (v) {
-        return this._put_create(v)
-    },
-    _put_create: function (v) {
-        if (this.master_fns.validate_fn) {
-            this.master_fns.validate_fn(v)
+        if (this.value_fns.validate_fn) {
+            this.value_fns.validate_fn(v)
         }
         // figure collision value (col)
         var map = this.map
-        var hash = this.master_fns.hash_fn(v)
+        var hash = this.value_fns.hash_fn(v)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, v, this.master_fns.create_fn)
+            return map.put_hc(hash, 0, v, this.value_fns.create_fn)
         }
-        if (this.master_fns.equal_fn(prev, v)) {
-            return map.put_hc(hash, 0, v, this.master_fns.create_fn)
+        if (this.value_fns.equal_fn(prev, v)) {
+            return map.put_hc(hash, 0, v, this.value_fns.create_fn)
             // return (map.by_hash[hash] = this.master_fns.create_fn(hash, 0, prev, arguments))    // faster?
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.master_fns.equal_fn(cols[col], v)) {
+            while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) {
                 col++
             }
         }
-        return map.put_hc(hash, col + 1, v, this.master_fns.create_fn)
+        return map.put_hc(hash, col + 1, v, this.value_fns.create_fn)
     },
     put_s: function (s) {
-        var str2val = this.master_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
+        var str2val = this.value_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
         return this.put_create(str2val(s))
     },
 })
