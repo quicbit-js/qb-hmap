@@ -35,7 +35,7 @@ function for_sparse_val (a, fn) {
     })
 }
 
-// values stored by hash, then by collision 'col'
+// values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
 function HMap (master, opt) {
     this.opt = opt
     this.master = master
