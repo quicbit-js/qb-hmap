@@ -84,8 +84,11 @@ HMap.prototype = {
         var idx = indexes[indexes.length - 1]
         return this.get_hc(idx[0], idx[1])
     },
-    put: function (key, val, create_key_fn, create_val_fn) {
-        return this.put_hc(key.hash, key.col, val, create_key_fn, create_val_fn)
+    put: function (key, val) {
+        if (key.hash == null) {
+            key = this.master.put_create(key)
+        }
+        return this.put_hc(key.hash, key.col, val)
     },
     // create injects custom construction of values to be placed into the map
     put_hc: function (h, c, val, create_fn) {
@@ -136,6 +139,9 @@ HMap.prototype = {
         this.put(this.master.put_s(s), v)
     },
     get: function (key) {
+        if (key.hash == null) {
+            key = this.master.put_create(key)
+        }
         return this.get_hc(key.hash, key.col)
     },
     // get by hash and collision
