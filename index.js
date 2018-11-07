@@ -440,12 +440,9 @@ function string_set (opt) {
             return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, buf.src, buf.off, buf.lim)
         },
         put_merge_fn: function (hash, col, prev, buf) {
-            return prev || new StrBuf(hash, col, buf, this)
+            return prev === undefined ? new StrBuf(hash, col, buf, this) : prev
         },
-        str2val_fn: function (s) {     // used by put_s()
-            var src = new Uint8Array(Buffer.from(s))            // use same Uint8Array view for consistency
-            return {src: src, off: 0, lim: src.length, str: s}
-        },
+        str2val_fn: str2buf,
     }
     return new MasterSet(assign({}, default_fns), assign({}, opt))
 }
@@ -480,6 +477,11 @@ StrBuf.prototype = {
     to_obj: buf_to_str,
 }
 
+function str2buf (s) {
+    var src = new Uint8Array(Buffer.from(s))            // use same Uint8Array view for consistency
+    return new StrBuf(null, null, {src: src, off: 0, lim: src.length, str: s})
+}
+
 function for_val (a, fn) {
     if (a.for_val) {
         a.for_val(fn)
@@ -504,4 +506,5 @@ module.exports = {
     last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
+    str2buf: str2buf,
 }
