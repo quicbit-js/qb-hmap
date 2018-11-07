@@ -233,16 +233,16 @@ test('hmap put_hc', function (t) {
         return String.fromCharCode(val.charCodeAt(0) + 1)
     }
     t.table_assert([
-        [ 'h', 'c', 'v', 'create1', 'opt', 'exp' ],
+        [ 'h', 'c', 'v', 'plus1', 'opt', 'exp' ],
         [ 1,   0,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'e', 'd', 'c'] ] ],
         [ 1,   4,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'c', 'e'] ] ],
         [ 1,   3,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'e'] ] ],
         [ 1,   0,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'f', 'd', 'c'] ] ],
         [ 1,   4,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'c', 'f'] ] ],
         [ 1,   3,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'f'] ] ],
-    ], function (h, c, v, create1, opt) {
+    ], function (h, c, v, plus1, opt) {
         var map = create_map(map_vals, opt)
-        var ret = map.put_hc(h, c, v, create1 ? create_plus_one : null)
+        var ret = map.put_hc(h, c, v, plus1 ? create_plus_one : null)
         return [ret, map.vals()]
     })
 })
@@ -327,12 +327,12 @@ test('hset put existing', function (t) {
         [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
         [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-    ], function (keys, opt) {
-        var kset = set_mod3()
-        var objs = keys.map(function (k) { return kset.put_create(k) })
-        var kset2 = set_mod3()
-        objs.forEach(function (o) { kset2.put(o) })
-        return kset2.vals()
+    ], function (keys) {
+        var set1 = set_mod3()
+        var objs = keys.map(function (k) { return set1.put_create(k) })
+        var set2 = set_mod3()
+        objs.forEach(function (o) { set2.put(o) })
+        return set2.vals()
     })
 })
 
