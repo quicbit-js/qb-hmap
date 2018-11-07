@@ -40,9 +40,9 @@ function HMap (master, opt) {
     this.opt = opt
     this.master = master        // master key-generator (assigns hash/col)
     this.by_hash = []
-    this.by_hash_col = []
+    this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
     this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
-    this._frozen = false
+    this._frozen = false            // freezing lets the map use cached indexes
 }
 
 HMap.prototype = {
@@ -64,7 +64,7 @@ HMap.prototype = {
             if (col) {
                 for (var ci = 0; ci< col.length; ci++) {
                     if (col[ci] !== undefined) {
-                        ret.push([hi, ci + 1])
+                        ret.push([hi, ci + 1])      // by_hash_col starts from index "1"
                     }
                 }
             }
@@ -84,11 +84,11 @@ HMap.prototype = {
         var idx = indexes[indexes.length - 1]
         return this.get_hc(idx[0], idx[1])
     },
-    put: function (key, val) {
+    put: function (key, val, create_fn) {
         if (key.hash == null) {
-            key = this.master.put_create(key)
+            key = this.master._put(key)
         }
-        return this.put_hc(key.hash, key.col, val)
+        return this.put_hc(key.hash, key.col, val, create_fn)
     },
     // create_fn is applied to the previous value (null if new) and the new input value before storing.
     // allowing the function to be injected here instead of storing and paramaterizing simplifies
@@ -142,7 +142,7 @@ HMap.prototype = {
     },
     get: function (key) {
         if (key.hash == null) {
-            key = this.master.put_create(key)
+            key = this.master._put(key)
         }
         return this.get_hc(key.hash, key.col)
     },
@@ -288,13 +288,11 @@ HSet.prototype = {
     get: function (v) {
         return this.map.get(v)
     },
-    put_create: function (v) {
-        var ret = this.map.master.put_create(v)
-        this.put(ret)
-        return ret
-    },
-    put: function (val) {
-        this.map.put(val, val, null)
+    put: function (v) {
+        if (v.hash == null) {
+            v = this.map.master._put(v)
+        }
+        return this.map.put_hc(v.hash, v.col, v, null)
     },
     put_all: function (a) {
         var map = this.map
@@ -340,9 +338,9 @@ HSet.prototype = {
 
 // the master set is populated with all values in any offspring sets and hmaps.
 function MasterSet (value_fns, opt) {
-    value_fns.hash_fn || err('no hash function')     // fn (v)        hash put_create() arguments to integer
-    value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare prev object with put_create() args
-    value_fns.create_fn || err('no create function') // fn (hash, col, prev, v) create new object from put_create() args, hash, col...
+    value_fns.hash_fn || err('no hash function')     // fn (v)        hash input value to integer
+    value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare previous stored object with new value
+    value_fns.create_fn || err('no create function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
     HSet.call(this, new HMap(this, this.opt))
@@ -357,7 +355,7 @@ MasterSet.prototype = extend(HSet.prototype, {
     hset: function (opt) {
         return new HSet(this.hmap(opt))
     },
-    put_create: function (v) {
+    _put: function (v) {
         if (this.value_fns.validate_fn) {
             this.value_fns.validate_fn(v)
         }
@@ -367,23 +365,29 @@ MasterSet.prototype = extend(HSet.prototype, {
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
             return map.put_hc(hash, 0, v, this.value_fns.create_fn)
-        }
-        if (this.value_fns.equal_fn(prev, v)) {
-            return map.put_hc(hash, 0, v, this.value_fns.create_fn)
-            // return (map.by_hash[hash] = this.master_fns.create_fn(hash, 0, prev, arguments))    // faster?
+        } else if (this.value_fns.equal_fn(prev, v)) {
+            // allow create_fn to process previous value, but don't let it be changed
+            this.value_fns.create_fn(hash, 0, prev, null)
+            return prev
         }
         var col = 0
         var cols = map.by_hash_col[hash]
         if (cols !== undefined) {
-            while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) {
-                col++
+            // find prior collision number
+            while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) { col++ }
+            if (col < cols.length) {
+                prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
+                // allow create_fn to process previous value, but don't let the value be changed
+                this.value_fns.create_fn(hash, col, prev, null)
+                return prev
             }
         }
-        return map.put_hc(hash, col + 1, v, this.value_fns.create_fn)
+        // new collision
+        return map.put_hc(hash, col + 1, v, this.value_fns.create_fn)   // collision is index + 1
     },
     put_s: function (s) {
         var str2val = this.value_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
-        return this.put_create(str2val(s))
+        return this.put(str2val(s))
     },
 })
 

@@ -313,9 +313,9 @@ test('hset', function (t) {
         [ [ 'a', 'd', 'g' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
         [ [ 'a', 'd', 'g', 'd' ], null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
     ], function (keys, opt) {
-        var kset = set_mod3()
-        keys.forEach(function (k) { kset.put_create(k) })
-        return kset.vals()
+        var set = set_mod3()
+        keys.forEach(function (k) { set.put(k) })
+        return set.vals()
     })
 })
 
@@ -329,7 +329,7 @@ test('hset put existing', function (t) {
         [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
     ], function (keys) {
         var set1 = set_mod3()
-        var objs = keys.map(function (k) { return set1.put_create(k) })
+        var objs = keys.map(function (k) { return set1.put(k) })
         var set2 = set_mod3()
         objs.forEach(function (o) { set2.put(o) })
         return set2.vals()
@@ -350,7 +350,7 @@ test('hset to_obj()', function (t) {
         [ [ 'a', 'd', 'g', 'd' ], 1,              [ 'a', 'd', 'g' ] ],
     ], function (keys, support_to_obj) {
         var kset = set_mod3({support_to_obj: support_to_obj})
-        keys.forEach(function (k) { kset.put_create(k) })
+        keys.forEach(function (k) { kset.put(k) })
         return kset.to_obj()
     })
 })
@@ -369,7 +369,7 @@ test('hset length', function (t) {
         [ [ 'a', 'd', 'g', 'd' ], null,  3 ],
     ], function (keys, opt) {
         var set = set_mod3()
-        keys.forEach(function (k) { set.put_create(k) })
+        keys.forEach(function (k) { set.put(k) })
         return set.length
     })
 })
@@ -397,7 +397,7 @@ test('find', function (t) {
         [ [ 'a', 'b', 'a' ],      'a',          'a' ],
     ], function (vals, find_val) {
         var set = set_mod3()
-        vals.forEach(function (v) { set.put_create(v) })
+        vals.forEach(function (v) { set.put(v) })
         var res = set.find(function (v) { return v.v === find_val })
         return res && res.v || null
     })
