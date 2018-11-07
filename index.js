@@ -448,7 +448,7 @@ function string_set (opt) {
 }
 
 function buf_to_str () {
-    if (this.str === null) {
+    if (this.str == null) {
         this.str = Buffer.from(this.src, this.off, this.lim - this.off).toString()
     }
     return this.str
