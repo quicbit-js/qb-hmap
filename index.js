@@ -84,17 +84,19 @@ HMap.prototype = {
         var idx = indexes[indexes.length - 1]
         return this.get_hc(idx[0], idx[1])
     },
-    put: function (key, val, create_fn) {
+    put: function (key, val, put_merge_fn) {
         if (key.hash == null) {
             key = this.master._put(key)
         }
-        return this.put_hc(key.hash, key.col, val, create_fn)
+        return this.put_hc(key.hash, key.col, val, put_merge_fn)
     },
-    // create_fn is applied to the previous value (null if new) and the new input value before storing.
-    // allowing the function to be injected here instead of storing and paramaterizing simplifies
-    // the work for MasterSet to create objects after determining hash values.
-    put_hc: function (h, c, val, create_fn) {
-        // create_fn == null || create_fn === this.master.master_fns.create_fn || err('oops')
+    // put_merge_fn (h, c, prev, v) can manage behavior and updates for colliding and new values.
+    // When a value is put, put_merge is called on previous and new values and the value returned
+    // is placed in the map (replacement) if it is !== previous.
+    // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
+    // the work of MasterSet to create objects after determining hash values.
+    put_hc: function (h, c, val, put_merge_fn) {
+        // put_merge_fn == null || put_merge_fn === this.master.master_fns.put_merge_fn || err('oops')
         val !== undefined || err('cannot put undefined value')
         if (this.opt.validate_fn) {
             this.opt.validate_fn(val)
@@ -103,7 +105,7 @@ HMap.prototype = {
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
-            if (create_fn) { val = create_fn(h, c, prev, val) }
+            if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
                 !this._frozen || err('map is frozen')
                 this.by_hash[h] = val
@@ -115,7 +117,7 @@ HMap.prototype = {
             } else {
                 prev = cols[c - 1]
             }
-            if (create_fn) { val = create_fn(h, c, prev, val) }
+            if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
                 !this._frozen || err('map is frozen')
                 cols[c - 1] = val
@@ -340,7 +342,7 @@ HSet.prototype = {
 function MasterSet (value_fns, opt) {
     value_fns.hash_fn || err('no hash function')     // fn (v)        hash input value to integer
     value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare previous stored object with new value
-    value_fns.create_fn || err('no create function') // fn (hash, col, prev, v) prepare/transform a value for storage
+    value_fns.put_merge_fn || err('no create function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
     HSet.call(this, new HMap(this, this.opt))
@@ -364,10 +366,10 @@ MasterSet.prototype = extend(HSet.prototype, {
         var hash = this.value_fns.hash_fn(v)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, v, this.value_fns.create_fn)
+            return map.put_hc(hash, 0, v, this.value_fns.put_merge_fn)
         } else if (this.value_fns.equal_fn(prev, v)) {
-            // allow create_fn to process previous value, but don't let it be changed
-            this.value_fns.create_fn(hash, 0, prev, null)
+            // allow put_merge_fn to process previous value, but don't let it be changed
+            this.value_fns.put_merge_fn(hash, 0, prev, null)
             return prev
         }
         var col = 0
@@ -377,13 +379,13 @@ MasterSet.prototype = extend(HSet.prototype, {
             while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) { col++ }
             if (col < cols.length) {
                 prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
-                // allow create_fn to process previous value, but don't let the value be changed
-                this.value_fns.create_fn(hash, col, prev, null)
+                // allow put_merge_fn to process previous value, but don't let the value be changed
+                this.value_fns.put_merge_fn(hash, col, prev, null)
                 return prev
             }
         }
         // new collision
-        return map.put_hc(hash, col + 1, v, this.value_fns.create_fn)   // collision is index + 1
+        return map.put_hc(hash, col + 1, v, this.value_fns.put_merge_fn)   // collision is index + 1
     },
     put_s: function (s) {
         var str2val = this.value_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
@@ -437,7 +439,7 @@ function string_set (opt) {
         equal_fn: function (buf_obj, buf) {
             return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, buf.src, buf.off, buf.lim)
         },
-        create_fn: function (hash, col, prev, buf) {
+        put_merge_fn: function (hash, col, prev, buf) {
             return prev || new StrBuf(hash, col, buf, this)
         },
         str2val_fn: function (s) {     // used by put_s()

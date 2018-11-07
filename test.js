@@ -536,7 +536,7 @@ function set_mod3 (opt) {
     return hmap.set({
         hash_fn: function (s) { return (s.charCodeAt(0) % 3) },  // creates collisions a..d..g..j...
         equal_fn: function (prev, s) { return prev.v === s },
-        create_fn: function (h, c, prev, v) {
+        put_merge_fn: function (h, c, prev, v) {
             if (prev) { return prev }
             var ret = { hash: h, col: c, v: v }
             if (to_obj_fn) { ret.to_obj = to_obj_fn }
