@@ -96,10 +96,9 @@ HMap.prototype = {
     // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
     // the work of MasterSet to create objects after determining hash values.
     put_hc: function (h, c, val, put_merge_fn) {
-        // put_merge_fn == null || put_merge_fn === this.master.master_fns.put_merge_fn || err('oops')
         val !== undefined || err('cannot put undefined value')
-        if (this.opt.validate_fn) {
-            this.opt.validate_fn(val)
+        if (this.opt.prep_fn) {
+            val = this.opt.prep_fn(val)
         }
         h >= 0 || err('invalid hash: ' + h)
         var prev
@@ -137,10 +136,7 @@ HMap.prototype = {
     put_obj: function (obj) {
         var self = this
         var kset = this.master
-        Object.keys(obj).forEach(function (k) { self.put(kset.put_s(k), obj[k]) })
-    },
-    put_s: function (s, v) {
-        this.put(this.master.put_s(s), v)
+        Object.keys(obj).forEach(function (k) { self.put(kset.put(k), obj[k]) })
     },
     get: function (key) {
         if (key.hash == null) {
@@ -308,11 +304,6 @@ HSet.prototype = {
             })
         }
     },
-    put_s: function (s) {
-        var ret = this.map.master.put_s(s)
-        this.put(ret)
-        return ret
-    },
     get length() { return this.map.length },
     first: function () { return this.map.first() },
     last: function () { return this.map.last() },
@@ -342,7 +333,7 @@ HSet.prototype = {
 function MasterSet (value_fns, opt) {
     value_fns.hash_fn || err('no hash function')     // fn (v)        hash input value to integer
     value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare previous stored object with new value
-    value_fns.put_merge_fn || err('no create function') // fn (hash, col, prev, v) prepare/transform a value for storage
+    value_fns.put_merge_fn || err('no put_merge function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
     HSet.call(this, new HMap(this, this.opt))
@@ -358,8 +349,8 @@ MasterSet.prototype = extend(HSet.prototype, {
         return new HSet(this.hmap(opt))
     },
     _put: function (v) {
-        if (this.value_fns.validate_fn) {
-            this.value_fns.validate_fn(v)
+        if (this.value_fns.prep_fn) {
+            v = this.value_fns.prep_fn(v)
         }
         // figure collision value (col)
         var map = this.map
@@ -386,11 +377,7 @@ MasterSet.prototype = extend(HSet.prototype, {
         }
         // new collision
         return map.put_hc(hash, col + 1, v, this.value_fns.put_merge_fn)   // collision is index + 1
-    },
-    put_s: function (s) {
-        var str2val = this.value_fns.str2val_fn || err('str2val_fn must be defined to use put_s and put_obj')
-        return this.put(str2val(s))
-    },
+    }
 })
 
 function add_stats (src, target) {
@@ -417,32 +404,51 @@ function buf_equal (a, aoff, alim, b, boff, blim) {
     return true
 }
 
-// a set that represents strings as utf8 buffers.  can be used with simple strings via put_s() or
-// with utf8 encoded buffer segments.  It is optimized for working with raw buffer segments
-// (always creates buffer segments for js strings, but creates js strings only when requested to do so via to_obj()).
+// a set that represents strings as utf8 buffers.  can be used with string keys or
+// with utf8 encoded buffer segments with 'arr', 'off', and 'lim' parameters.  It is optimized for
+// working with raw buffer segments
+// (always creates buffer segments for js strings, but creates strings only when requested to do so via to_obj()).
 function string_set (opt) {
     var default_fns = {
-        validate_fn: function (buf) {
-            buf.src || err('missing buf.src')
-            buf.off != null || err('missing buf.off')
-            buf.lim != null || err('missing buf.lim')
+        prep_fn: function (src) {
+            var ret = src
+            if (src.src) {
+                src.src.length != null || err('invalid src.src: ' + src)
+                src.off != null || err('missing src.off')
+                src.lim != null || err('missing src.lim')
+                ret = src
+            } else {
+                if (typeof src === 'string') {
+                    ret = Buffer.from(src)
+                } else {
+                    Array.isArray(src) || ArrayBuffer.isView(src) || err('invalid src: ' + src)
+                }
+            }
+            return ret
         },
-        hash_fn: function (buf) {
-            var src = buf.src
-            var lim = buf.lim
+        hash_fn: function (src) {
+            var off, lim
+            if (src.src) { off = src.off; lim = src.lim; src = src.src }
+            else { off = 0; lim = src.length }
             var h = 0
-            for (var i = buf.off; i < lim; i++) {
+            for (var i = off; i < lim; i++) {
                 h = 0x7FFFFFFF & ((h * 33) ^ src[i])
             }
             return h
         },
-        equal_fn: function (buf_obj, buf) {
-            return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, buf.src, buf.off, buf.lim)
+        equal_fn: function (buf_obj, src) {
+            var off, lim
+            if (src.src) { off = src.off; lim = src.lim; src = src.src }
+            else { off = 0; lim = src.length }
+            return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, src, off, lim)
         },
-        put_merge_fn: function (hash, col, prev, buf) {
-            return prev === undefined ? new StrBuf(hash, col, buf, this) : prev
+        put_merge_fn: function (hash, col, prev, src) {
+            if (prev) { return prev }
+            var off, lim
+            if (src.src) { off = src.off; lim = src.lim; src = src.src }
+            else { off = 0; lim = src.length }
+            return new StrBuf(hash, col, src, off, lim)
         },
-        str2val_fn: str2buf,
     }
     return new MasterSet(assign({}, default_fns), assign({}, opt))
 }
@@ -454,32 +460,18 @@ function buf_to_str () {
     return this.str
 }
 
-function StrBuf (hash, col, buf) {
+function StrBuf (hash, col, src) {
     this.hash = hash
     this.col = col
-    var src = buf.src
-    var off = buf.off
-    var len = buf.lim - off
-    if (off !== 0 || len !== src.length) {
-        var nsrc = new Uint8Array(len)
-        for (var i = 0; i < len; i++) { nsrc[i] = src[off + i] }
-        src = nsrc
-    }
-    this.src = src
+    this.src = src.src ? Buffer.from(src.src, src.off, src.lim) : Buffer.from(src)
     this.off = 0
-    this.lim = len
-    this.str = buf.str
+    this.lim = this.src.length
 }
 
 StrBuf.prototype = {
     constructor: StrBuf,
     toString: buf_to_str,
     to_obj: buf_to_str,
-}
-
-function str2buf (s) {
-    var src = new Uint8Array(Buffer.from(s))            // use same Uint8Array view for consistency
-    return new StrBuf(null, null, {src: src, off: 0, lim: src.length, str: s})
 }
 
 function for_val (a, fn) {
@@ -506,5 +498,4 @@ module.exports = {
     last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
-    str2buf: str2buf,
 }
