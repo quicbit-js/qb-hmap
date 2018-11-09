@@ -281,13 +281,16 @@ function HSet (map) {
 HSet.prototype = {
     HALT: HALT,
     constructor: HSet,
+    get master () {
+        return this.map.master
+    },
 
     // public master (always returns the master, which may be the set itself)
     get: function (v) {
         return this.map.get(v)
     },
     put: function (v) {
-        if (v.hash == null) {
+        if (!(v.hash >= 0)) {
             v = this.map.master._put(v)
         }
         return this.map.put_hc(v.hash, v.col, v, null)
@@ -416,7 +419,6 @@ function string_set (opt) {
                 src.src.length != null || err('invalid src.src: ' + src)
                 src.off != null || err('missing src.off')
                 src.lim != null || err('missing src.lim')
-                ret = src
             } else {
                 if (typeof src === 'string') {
                     ret = Buffer.from(src)
@@ -460,10 +462,10 @@ function buf_to_str () {
     return this.str
 }
 
-function StrBuf (hash, col, src) {
+function StrBuf (hash, col, src, off, lim) {
     this.hash = hash
     this.col = col
-    this.src = src.src ? Buffer.from(src.src, src.off, src.lim) : Buffer.from(src)
+    this.src = src.slice(off, lim)
     this.off = 0
     this.lim = this.src.length
 }
