@@ -231,14 +231,14 @@ test('hmap put_hc', function (t) {
         return String.fromCharCode(val.charCodeAt(0) + 1)
     }
     t.table_assert([
-        [ 'h', 'c', 'v', 'plus1', 'exp' ],
-        [ 1,   0,   'e', 0,       [ 'e', ['a', 'e', 'c', 'd'] ] ],
-        [ 1,   4,   'e', 0,       [ 'e', ['a', 'b', 'c', 'd', 'e'] ] ],
-        [ 1,   3,   'e', 0,       [ 'e', ['a', 'b', 'e', 'd'] ] ],
-    ], function (h, c, v, plus1) {
+        [ 'h', 'c', 'v', 'exp' ],
+        [ 1,   0,   'e', [ 'a', 'e', 'c', 'd' ] ],
+        [ 1,   4,   'e', [ 'a', 'b', 'c', 'd', 'e' ] ],
+        [ 1,   3,   'e', [ 'a', 'b', 'e', 'd' ] ],
+    ], function (h, c, v) {
         var map = create_map(map_vals)
-        var ret = map.put_hc(h, c, v, plus1 ? create_plus_one : null)
-        return [ret, map.vals()]
+        map.put_hc(h, c, v)
+        return map.vals()
     })
 })
 

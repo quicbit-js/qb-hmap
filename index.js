@@ -127,7 +127,6 @@ HMap.prototype = {
             this.h_arr.push(h)
             this.c_arr.push(c)
         }
-        return val
     },
     // put all keys and values of the given object
     put_obj: function (obj) {
@@ -289,7 +288,8 @@ HSet.prototype = {
         if (!(v.hash >= 0)) {
             v = this.map.master._put_create(v)
         }
-        return this.map.put_hc(v.hash, v.col, v, null)
+        this.map.put_hc(v.hash, v.col, v, null)
+        return v
     },
     put_all: function (a) {
         var map = this.map
@@ -367,8 +367,14 @@ MasterSet.prototype = extend(HSet.prototype, {
             }
             col = col + 1   // collision number starts at 1 in the collisions map
         }
-        v = this.value_fns.put_merge_fn(hash, col, prev, prev === undefined ? v : null)
-        return v === prev ? prev : map.put_hc(hash, col, v)
+        if (prev === undefined) {
+            v = this.value_fns.put_merge_fn(hash, col, undefined, v)
+            map.put_hc(hash, col, v)
+            return v
+        } else {
+            this.value_fns.put_merge_fn(hash, col, prev, null)
+            return prev
+        }
     }
 })
 
