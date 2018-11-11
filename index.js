@@ -320,27 +320,30 @@ MasterSet.prototype = extend(HSet.prototype, {
         var prev = map.by_hash[hash]
         var ret
         if (prev === undefined ) {
-            ret = map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, prev, v))
+            ret = map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, undefined, v))
         } else if (this.value_fns.equal_fn(prev, v)) {
             // allow put_merge_fn to process previous value, but don't let it be changed
             ret = this.value_fns.put_merge_fn(hash, 0, prev, null)
         } else {
+            // find matching collision value
             prev = undefined
-            var col = 0
-            var cols = map.by_hash_col[hash]
-            if (cols !== undefined) {
-                // find prior collision number
-                while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) { col++ }
-                if (col < cols.length) {
-                    prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
-                    // allow put_merge_fn to process previous value, but don't let the value be changed
+            var ci = 0
+            var collisions = map.by_hash_col[hash]
+            if (collisions !== undefined) {
+                while (ci < collisions.length) {
+                    if(this.value_fns.equal_fn(collisions[ci], v)) {
+                        prev = collisions[ci]
+                        break
+                    }
+                    ci++
                 }
             }
             if (prev === undefined) {
                 // new collision
-                ret = map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
+                ret = map.put_hc(hash, ci+1, this.value_fns.put_merge_fn(hash, ci+1, undefined, v))   // collision is index + 1
             } else {
-                ret = this.value_fns.put_merge_fn(hash, col, prev, null)
+                // allow put_merge_fn to process previous value, but don't let the value replaced
+                ret = this.value_fns.put_merge_fn(hash, ci, prev, null)
             }
         }
         return ret
