@@ -77,22 +77,19 @@ function HMap (master, opt) {
     this.master = master        // master key-generator (assigns hash/col)
     this.by_hash = []
     this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this.indexes = []
+    this.h_arr = []
+    this.c_arr = []
 }
 
 HMap.prototype = {
     HALT: HALT,
     constructor: HMap,
-    get length () { return this.indexes.length },
-    get first () {
-        var idx = this.indexes[0]
-        return idx && this.get_hc(idx[0], idx[1])
-    },
+    get length () { return this.h_arr.length },
+    get first () { return this.h_arr.length === 0 ? undefined : this.get_hc(this.h_arr[0], this.c_arr[0]) },
     get last () {
-        var indexes = this.indexes
-        if (indexes.length === 0) { return undefined }
-        var idx = indexes[indexes.length - 1]
-        return this.get_hc(idx[0], idx[1])
+        return this.h_arr.length === 0
+            ? undefined
+            : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
     },
     put: function (key, val, put_merge_fn) {
         if (key.hash == null) {
@@ -129,7 +126,8 @@ HMap.prototype = {
         }
 
         if (prev === undefined) {
-            this.indexes.push([h, c])
+            this.h_arr.push(h)
+            this.c_arr.push(c)
         }
         return val
     },
@@ -163,22 +161,20 @@ HMap.prototype = {
         if (a.by_hash.length !== b.by_hash.length || a.by_hash_col.length !== b.by_hash_col.length) {
             return false
         }
-        var aind = a.indexes
-        if (a.indexes.length !== b.indexes.length) {
+        if (a.h_arr.length !== b.h_arr.length) {
             return false
         }
-
-        var len = aind.length
+        var a_harr = a.h_arr
+        var a_carr = a.c_arr
+        var len = a_harr.length
         for (var i = 0; i < len; i++) {
-            if (aind[i][1] === 0) {
-                if (!b.by_hash[aind[i][0]]) {
+            if (a_carr[i] === 0) {
+                if (!b.by_hash[a_harr[i]]) {
                     return false
                 }
             } else {
                 // collision
-                var ahash = aind[i][0]
-                var acol = aind[i][1]
-                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol - 1])) {
+                if (!(b.by_hash_col[a_harr[i]] && b.by_hash_col[ a_harr[i] ][ a.c_arr[i] - 1 ])) {
                     return false
                 }
             }
@@ -188,10 +184,11 @@ HMap.prototype = {
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
     for_key: function (fn) {
         var key_set = this.master
-        var indexes = this.indexes
-        for (var i=0; i<indexes.length; i++) {
-            var idx = indexes[i]
-            var res = fn(key_set && key_set.map.get_hc(idx[0], idx[1]) || idx, i)
+        var harr = this.h_arr
+        var carr = this.c_arr
+        var len = harr.length
+        for (var i = 0; i < len; i++) {
+            var res = fn(key_set && key_set.map.get_hc(harr[i], carr[i]) || [harr[i], carr[i]], i)
             if (res === HALT) {
                 break
             }
@@ -200,11 +197,12 @@ HMap.prototype = {
     for_val: function (fn) { return this._for_key_val(fn, false) },
     _for_key_val: function (fn, with_keys) {
         var key_set = with_keys ? this.master : null
-        var indexes = this.indexes
-        for (var i=0; i < indexes.length; i++) {
-            var idx = indexes[i]
-            var k = key_set && key_set.map.get_hc(idx[0], idx[1]) || idx
-            var v = (idx[1] === 0) ? this.by_hash[idx[0]] : this.by_hash_col[idx[0]][idx[1]-1]
+        var harr = this.h_arr
+        var carr = this.c_arr
+        var len = harr.length
+        for (var i=0; i < len; i++) {
+            var k = key_set && key_set.map.get_hc(harr[i], carr[i]) || [harr[i], carr[i]]
+            var v = carr[i] === 0 ? this.by_hash[harr[i]] : this.by_hash_col[harr[i]][carr[i] - 1]
             var res = with_keys ? fn(k, v, i) : fn(v, i)
             if (res === HALT) {
                 break

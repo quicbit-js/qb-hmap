@@ -65,7 +65,8 @@ test('hmap indexes', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                 [ [0, 0], [1, 0], [1, 2] ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],    [ [0, 0], [1, 0], [1, 2], [1, 1] ] ],
     ], function (hc_vals) {
-        return create_map(hc_vals).indexes
+        var m = create_map(hc_vals)
+        return m.h_arr.map(function (h, i) { return [h, m.c_arr[i]] })
     })
 })
 
