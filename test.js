@@ -374,21 +374,6 @@ test('first and last functions', function (t) {
     })
 })
 
-test('validate', function (t) {
-    var master = hmap.string_set({
-        prep_fn: function (buf) {
-            if (buf.toString() === 'oh no!') { throw Error('my validation error') }
-            return buf
-        }
-    })
-
-    master.put('ok')
-    master.put('all_good')
-    t.throws(function () {master.put('oh no!')}, /my validation error/)
-    t.same(master.to_obj(), [ 'ok', 'all_good' ])
-    t.end()
-})
-
 test('first and last', function (t) {
     var master = hmap.string_set()
     var set1 = master.hset()

@@ -323,20 +323,25 @@ MasterSet.prototype = extend(HSet.prototype, {
         } else if (this.value_fns.equal_fn(prev, v)) {
             // allow put_merge_fn to process previous value, but don't let it be changed
             return this.value_fns.put_merge_fn(hash, 0, prev, null)
-        }
-        var col = 0
-        var cols = map.by_hash_col[hash]
-        if (cols !== undefined) {
-            // find prior collision number
-            while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) { col++ }
-            if (col < cols.length) {
-                prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
-                // allow put_merge_fn to process previous value, but don't let the value be changed
+        } else {
+            prev = undefined
+            var col = 0
+            var cols = map.by_hash_col[hash]
+            if (cols !== undefined) {
+                // find prior collision number
+                while (col < cols.length && !this.value_fns.equal_fn(cols[col], v)) { col++ }
+                if (col < cols.length) {
+                    prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
+                    // allow put_merge_fn to process previous value, but don't let the value be changed
+                }
+            }
+            if (prev === undefined) {
+                return map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
+            } else {
                 return this.value_fns.put_merge_fn(hash, col, prev, null)
             }
+            // new collision
         }
-        // new collision
-        return map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
     }
 })
 
