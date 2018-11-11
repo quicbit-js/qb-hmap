@@ -79,18 +79,19 @@ function HMap (master, opt) {
     this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
     this.h_arr = []
     this.c_arr = []
+    this.first = undefined
 }
 
 HMap.prototype = {
     HALT: HALT,
     constructor: HMap,
     get length () { return this.h_arr.length },
-    get first () { return this.h_arr.length === 0 ? undefined : this.get_hc(this.h_arr[0], this.c_arr[0]) },
-    get last () {
-        return this.h_arr.length === 0
-            ? undefined
-            : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
-    },
+    // get first () { return this.h_arr.length === 0 ? undefined : this.get_hc(this.h_arr[0], this.c_arr[0]) },
+    // get last () {
+    //     return this.h_arr.length === 0
+    //         ? undefined
+    //         : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
+    // },
     put: function (key, val) {
         if (key.hash == null) {
             key = this.master._put_create(key)
@@ -124,6 +125,7 @@ HMap.prototype = {
         }
 
         if (prev === undefined) {
+            if (this.first === undefined) { this.first = val}
             this.h_arr.push(h)
             this.c_arr.push(c)
         }
@@ -492,7 +494,6 @@ module.exports = {
     hash: hash,
     for_val: for_val,
     first: first,
-    last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
     seq: function (master, opt) { return new MapSeq(master, opt) },
