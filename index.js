@@ -322,8 +322,6 @@ MasterSet.prototype = extend(HSet.prototype, {
         var col = 0
         var new_val = null
         if (prev === undefined ) {
-            // new value
-            // col = 0
             new_val = v
         } else if (!this.value_fns.equal_fn(prev, v)) {
             // find matching collision value
@@ -344,9 +342,7 @@ MasterSet.prototype = extend(HSet.prototype, {
                 col = ci + 1        // collision number starts at 1 in the collisions map
                 new_val = v
             } else {
-                // existing value
                 col = ci
-                // new_val = null
             }
         }
         v = this.value_fns.put_merge_fn(hash, col, prev, new_val)
