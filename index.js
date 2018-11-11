@@ -317,14 +317,15 @@ MasterSet.prototype = extend(HSet.prototype, {
         // figure collision value (col)
         var map = this.map
         var hash = this.value_fns.hash_fn(v)
+
         var prev = map.by_hash[hash]
-        var ret
+        var col = 0
+        var new_val = null
         if (prev === undefined ) {
-            ret = map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, undefined, v))
-        } else if (this.value_fns.equal_fn(prev, v)) {
-            // allow put_merge_fn to process previous value, but don't let it be changed
-            ret = this.value_fns.put_merge_fn(hash, 0, prev, null)
-        } else {
+            // new value
+            // col = 0
+            new_val = v
+        } else if (!this.value_fns.equal_fn(prev, v)) {
             // find matching collision value
             prev = undefined
             var ci = 0
@@ -340,13 +341,16 @@ MasterSet.prototype = extend(HSet.prototype, {
             }
             if (prev === undefined) {
                 // new collision
-                ret = map.put_hc(hash, ci+1, this.value_fns.put_merge_fn(hash, ci+1, undefined, v))   // collision is index + 1
+                col = ci + 1        // collision number starts at 1 in the collisions map
+                new_val = v
             } else {
-                // allow put_merge_fn to process previous value, but don't let the value replaced
-                ret = this.value_fns.put_merge_fn(hash, ci, prev, null)
+                // existing value
+                col = ci
+                // new_val = null
             }
         }
-        return ret
+        v = this.value_fns.put_merge_fn(hash, col, prev, new_val)
+        return v === prev ? prev : map.put_hc(hash, col, v)
     }
 })
 
