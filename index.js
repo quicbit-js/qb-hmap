@@ -109,7 +109,9 @@ HMap.prototype = {
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
-            if (val !== prev) { this.by_hash[h] = val }  // checking val !== prev is a significant performance improvement
+            if (val !== prev) {         // checking val !== prev improved performance of type scanning by 15%
+                this.by_hash[h] = val
+            }
         } else if (c > 0) {
             var cols = this.by_hash_col[h]
             if (!cols) {
@@ -117,16 +119,14 @@ HMap.prototype = {
                 cols[c - 1] = val
             } else {
                 prev = cols[c - 1]
-                if (val !== prev) { cols[c - 1] = val }
+                if (val !== prev) {
+                    cols[c - 1] = val
+                }
             }
         } else {
             err ('invalid collision: ' + c)
         }
-
-        if (prev === undefined) {
-            this.h_arr.push(h)
-            this.c_arr.push(c)
-        }
+        if (prev === undefined) { this.h_arr.push(h); this.c_arr.push(c) }
     },
     // put all keys and values of the given object
     put_obj: function (obj) {
