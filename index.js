@@ -51,7 +51,7 @@ HMap.prototype = {
     get length () {
         return this.indexes.length
     },
-    get indexes() {
+    get indexes () {
         if (this._indexes) {
             return this._indexes
         }
@@ -74,11 +74,11 @@ HMap.prototype = {
         }
         return ret
     },
-    first: function () {
+    get first () {
         var idx = this.indexes[0]
         return idx && this.get_hc(idx[0], idx[1])
     },
-    last: function () {
+    get last () {
         var indexes = this.indexes
         if (indexes.length === 0) { return undefined }
         var idx = indexes[indexes.length - 1]
@@ -307,9 +307,9 @@ HSet.prototype = {
             })
         }
     },
-    get length() { return this.map.length },
-    first: function () { return this.map.first() },
-    last: function () { return this.map.last() },
+    get length () { return this.map.length },
+    get first () { return this.map.first },
+    get last () { return this.map.last },
     get_hc: function (h, c) { return this.map.get_hc(h, c) },
     same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
     for_val: function (fn) { this.map.for_val(fn) },
@@ -485,11 +485,11 @@ function for_val (a, fn) {
 }
 
 function first (a) {
-    return a.first ? a.first(a) : a[0]
+    return a.first ? a.first : a[0]
 }
 
 function last (a) {
-    return a.last ? a.last(a) : a[a.length-1]
+    return a.last ? a.last : a[a.length-1]
 }
 
 module.exports = {
