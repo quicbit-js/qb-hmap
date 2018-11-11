@@ -60,7 +60,7 @@ HMap.prototype = {
     },
     put: function (key, val, put_merge_fn) {
         if (key.hash == null) {
-            key = this.master._put(key)
+            key = this.master._put_create(key)
         }
         return this.put_hc(key.hash, key.col, val, put_merge_fn)
     },
@@ -104,8 +104,8 @@ HMap.prototype = {
         Object.keys(obj).forEach(function (k) { self.put(kset.put(k), obj[k]) })
     },
     get: function (key) {
-        if (key.hash == null) {
-            key = this.master._put(key)
+        if (!(key.hash >= 0)) {
+            key = this.master._put_create(key)
         }
         return this.get_hc(key.hash, key.col)
     },
@@ -253,7 +253,7 @@ HSet.prototype = {
     },
     put: function (v) {
         if (!(v.hash >= 0)) {
-            v = this.map.master._put(v)
+            v = this.map.master._put_create(v)
         }
         return this.map.put_hc(v.hash, v.col, v, null)
     },
@@ -310,7 +310,7 @@ MasterSet.prototype = extend(HSet.prototype, {
     hset: function (opt) {
         return new HSet(this.hmap(opt))
     },
-    _put: function (v) {
+    _put_create: function (v) {
         if (this.value_fns.prep_fn) {
             v = this.value_fns.prep_fn(v)
         }
