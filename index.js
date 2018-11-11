@@ -168,7 +168,8 @@ HMap.prototype = {
             return false
         }
 
-        for (var i=0; i<aind.length; i++) {
+        var len = aind.length
+        for (var i = 0; i < len; i++) {
             if (aind[i][1] === 0) {
                 if (!b.by_hash[aind[i][0]]) {
                     return false
