@@ -41,39 +41,14 @@ function HMap (master, opt) {
     this.master = master        // master key-generator (assigns hash/col)
     this.by_hash = []
     this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this._indexes = opt.insert_order || opt.insert_order == null ? [] : null
-    this._frozen = false            // freezing lets the map use cached indexes
+    this.len = 0
+    this.indexes = []
 }
 
 HMap.prototype = {
     HALT: HALT,
     constructor: HMap,
-    get length () {
-        return this.indexes.length
-    },
-    get indexes () {
-        if (this._indexes) {
-            return this._indexes
-        }
-        var self = this
-        var ret = []
-        Object.keys(self.by_hash).forEach(function (i_str) {
-            var hi = parseInt(i_str)
-            ret.push([hi, 0])
-            var col = self.by_hash_col[hi]
-            if (col) {
-                for (var ci = 0; ci< col.length; ci++) {
-                    if (col[ci] !== undefined) {
-                        ret.push([hi, ci + 1])      // by_hash_col starts from index "1"
-                    }
-                }
-            }
-        })
-        if (this._frozen) {
-            this._indexes = ret
-        }
-        return ret
-    },
+    get length () { return this.len },
     get first () {
         var idx = this.indexes[0]
         return idx && this.get_hc(idx[0], idx[1])
@@ -106,7 +81,6 @@ HMap.prototype = {
             prev = this.by_hash[h]
             if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
-                !this._frozen || err('map is frozen')
                 this.by_hash[h] = val
             }
         } else if (c > 0) {
@@ -118,7 +92,6 @@ HMap.prototype = {
             }
             if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
-                !this._frozen || err('map is frozen')
                 cols[c - 1] = val
             }
         } else {
@@ -126,9 +99,10 @@ HMap.prototype = {
         }
 
         if (prev === undefined) {
-            if (this._indexes !== null) {
-                this._indexes.push([h, c])
+            if (this.indexes !== null) {
+                this.indexes.push([h, c])
             }
+            this.len++
         }
         return val
     },
@@ -198,7 +172,7 @@ HMap.prototype = {
     _for_key_val: function (fn, with_keys) {
         var key_set = with_keys ? this.master : null
         var indexes = this.indexes
-        for (var i=0; i<indexes.length; i++) {
+        for (var i=0; i < indexes.length; i++) {
             var idx = indexes[i]
             var k = key_set && key_set.map.get_hc(idx[0], idx[1]) || idx
             var v = (idx[1] === 0) ? this.by_hash[idx[0]] : this.by_hash_col[idx[0]][idx[1]-1]
@@ -239,9 +213,6 @@ HMap.prototype = {
     },
     collision_count: function () {
         return this.collisions().reduce(function (t, ca) { return t + ca.length }, 0 )
-    },
-    freeze: function () {
-        this._frozen = true
     },
     to_obj: function (opt) {
         var keys = []
@@ -317,9 +288,6 @@ HSet.prototype = {
     vals: function () {return this.map.vals() },
     collisions: function() { return this.map.collisions() },
     collision_count: function () { return this.map.collision_count() },
-    freeze: function () {
-        this.map._frozen = true
-    },
     to_obj: function (opt) {
         var ret = []
         this.map.for_val(function (v) {

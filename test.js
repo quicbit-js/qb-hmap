@@ -56,39 +56,37 @@ test('hmap collisions', function (t) {
 
 test('hmap indexes', function (t) {
     t.table_assert([
-        [ 'hc_vals',                                                'opt',   'exp' ],
-        [ [ [0, 0, 'a'] ],                                          null,    [ [0, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                null,    [ [0, 0], [1, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                null,    [ [0, 0], [1, 0], [1, 2] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   {insert_order:0},    [ [0, 0], [1, 0], [1, 1], [1, 2] ] ],
-        [ [ [0, 0, 'a'] ],                                          {insert_order:1},    [ [0, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                {insert_order:1},    [ [0, 0], [1, 0], [1, 2] ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],   {insert_order:1},    [ [0, 0], [1, 0], [1, 2], [1, 1] ] ],
-    ], function (hc_vals, opt) {
-        return create_map(hc_vals, opt).indexes
+        [ 'hc_vals',                                                 'exp' ],
+        [ [ [0, 0, 'a'] ],                                           [ [0, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                 [ [0, 0], [1, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                 [ [0, 0], [1, 0], [1, 2] ] ],
+        [ [ [0, 0, 'a'] ],                                           [ [0, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],                 [ [0, 0], [1, 0] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],                 [ [0, 0], [1, 0], [1, 2] ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ],    [ [0, 0], [1, 0], [1, 2], [1, 1] ] ],
+    ], function (hc_vals) {
+        return create_map(hc_vals).indexes
     })
 })
 
 test('hmap for_val', function (t) {
     t.table_assert([
-        [ 'hc_vals',                                              'halt', 'opt',               'exp' ],
-        [ [ [0, 0, 'a'] ],                                        9,      null,                [ 'a' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      null,                [ 'a', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      {insert_order:0},    [ 'a', 'b', 'd', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,      null,                [] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,      null,                [ 'a' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      null,                [ 'a', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order:0 },  [ 'a', 'b', 'd', 'c' ] ],
-        [ [ [0, 0, 'a'] ],                                        9,      { insert_order: 1 }, [ 'a' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      { insert_order: 1 }, [ 'a', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      { insert_order: 1 }, [ 'a', 'b', 'c', 'd' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,      { insert_order: 1 }, [] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,      { insert_order: 1 }, [ 'a' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      { insert_order: 1 }, [ 'a', 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order: 1 }, [ 'a', 'b', 'c', 'd' ] ],
-    ], function (hc_vals, halt, opt) {
-        var map = create_map(hc_vals, opt)
+        [ 'hc_vals',                                              'halt',  'exp' ],
+        [ [ [0, 0, 'a'] ],                                        9,       [ 'a' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,       [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,       [ 'a', 'b', 'c', 'd' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,       [] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,       [ 'a' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,       [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'] ],                                        9,       [ 'a' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,       [ 'a', 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,       [ 'a', 'b', 'c', 'd' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,       [] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,       [ 'a' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,       [ 'a', 'b' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,       [ 'a', 'b', 'c', 'd' ] ],
+    ], function (hc_vals, halt) {
+        var map = create_map(hc_vals)
         var ret = []
         map.for_val(function (v, i) {
             if (i === halt) {
@@ -105,11 +103,11 @@ test('hmap for_key_val', function (t) {
         [ 'hc_vals',                                              'halt', 'opt',               'exp' ],
         [ [ [0, 0, 'a'] ],                                        9,      null,                [ [0, 0], 'a' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      null,                [ [0, 0], 'a', [1, 0], 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      { insert_order: 0 }, [ [0, 0], 'a', [1, 0], 'b', [1, 1], 'd', [1, 2], 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      { insert_order: 0 }, [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,      null,                [] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,      null,                [ [0, 0], 'a' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      null,                [ [0, 0], 'a', [1, 0], 'b' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order: 0 }, [ [0, 0], 'a', [1, 0], 'b', [1, 1], 'd', [1, 2], 'c' ] ],
+        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      { insert_order: 0 }, [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
         [ [ [0, 0, 'a'] ],                                        9,      { insert_order: 1 }, [ [0, 0], 'a' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      { insert_order: 1 }, [ [0, 0], 'a', [1, 0], 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      { insert_order: 1 }, [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
@@ -142,7 +140,6 @@ test('hmap vals', function (t) {
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              null,  [ 'a', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'] ],              null,  [ 'a', 'b', 'c' ] ],
-        [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], {insert_order:0},  [ 'a', 'b', 'd', 'c' ] ],
         [ [ [0, 0, 'a'] ],                                        {insert_order:1},  [ 'a' ] ],
         [ [ [1, 0, 'b'] ],                                        {insert_order:1},  [ 'b' ] ],
         [ [ [0, 0, 'a'], [1, 0, 'b'] ],                           {insert_order:1},  [ 'a', 'b' ] ],
@@ -213,8 +210,8 @@ test('hmap put', function (t) {
     ]
     t.table_assert([
         [ 'h', 'c', 'v', 'opt', 'exp' ],
-        [ 1,   4,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'c', 'e'] ] ],
-        [ 1,   3,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'e'] ] ],
+        [ 1,   4,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'c', 'd', 'e'] ] ],
+        [ 1,   3,   'e', { insert_order: 0 },  [ 'e', ['a', 'b', 'e', 'd'] ] ],
     ], function (h, c, v, opt) {
         var map = create_map(map_vals, opt)
         var ret = map.put({hash: h, col: c}, v)
@@ -233,55 +230,18 @@ test('hmap put_hc', function (t) {
         return String.fromCharCode(val.charCodeAt(0) + 1)
     }
     t.table_assert([
-        [ 'h', 'c', 'v', 'plus1', 'opt', 'exp' ],
-        [ 1,   0,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'e', 'd', 'c'] ] ],
-        [ 1,   4,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'c', 'e'] ] ],
-        [ 1,   3,   'e', 0,         { insert_order: 0 },  [ 'e', ['a', 'b', 'd', 'e'] ] ],
-        [ 1,   0,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'f', 'd', 'c'] ] ],
-        [ 1,   4,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'c', 'f'] ] ],
-        [ 1,   3,   'e', 1,         { insert_order: 0 },  [ 'f', ['a', 'b', 'd', 'f'] ] ],
-    ], function (h, c, v, plus1, opt) {
-        var map = create_map(map_vals, opt)
+        [ 'h', 'c', 'v', 'plus1', 'exp' ],
+        [ 1,   0,   'e', 0,       [ 'e', ['a', 'e', 'c', 'd'] ] ],
+        [ 1,   4,   'e', 0,       [ 'e', ['a', 'b', 'c', 'd', 'e'] ] ],
+        [ 1,   3,   'e', 0,       [ 'e', ['a', 'b', 'e', 'd'] ] ],
+        [ 1,   0,   'e', 1,       [ 'f', ['a', 'f', 'c', 'd'] ] ],
+        [ 1,   4,   'e', 1,       [ 'f', ['a', 'b', 'c', 'd', 'f'] ] ],
+        [ 1,   3,   'e', 1,       [ 'f', ['a', 'b', 'f', 'd'] ] ],
+    ], function (h, c, v, plus1) {
+        var map = create_map(map_vals)
         var ret = map.put_hc(h, c, v, plus1 ? create_plus_one : null)
         return [ret, map.vals()]
     })
-})
-
-test('freeze', function (t) {
-    var master = set_mod3({insert_order: false, support_to_obj: true})
-    var set = master.hset()
-
-    set.put('xyz')
-
-    // with no insert order, indexes are stored only if input is frozen
-    t.same(set.to_obj(), ['xyz'])
-    t.same(set.map._indexes, null)
-    t.same(master.to_obj(), ['xyz'] )
-    t.same(master.map._indexes, null)
-    master.freeze()
-    t.same(master.to_obj(), ['xyz'] )
-    t.same(master.map._indexes, [ [ 0, 0 ] ])      // indexes are saved
-
-    t.throws(function () {set.put('pdq')}, /map is frozen/)
-    t.throws(function () {master.put('pdq')}, /map is frozen/)
-    t.end()
-})
-
-test('freeze collision', function (t) {
-    var master = set_mod3({insert_order: false, support_to_obj: true})
-    var map = master.hmap()
-    map.put('a', 'aval')
-    map.put('b', 'bval')
-    map.put('c', 'cval')
-    map.put('d', 'dval')       // collision value
-    map.freeze()
-
-    var d = master.put('d')
-    t.same(map.get(d), 'dval', 'get d')
-    map.put(d, 'dval')              // ok, same as before
-
-    t.throws(function () {map.put(d, 'xxxxx')}, /map is frozen/, 'collision put')
-    t.end()
 })
 
 test('hmap errors', function (t) {
