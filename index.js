@@ -46,7 +46,7 @@ function for_sparse_val (a, fn) {
 // MapSeq.prototype = extend(scom.Sequence.prototype, HMap.prototype, {
 //     constructor: MapSeq,
 //     append_c: function (v, c) {
-//         var k = this.master._put_create(v)
+//         var k = this.master.put_create(v)
 //         var nv = this.create_val(k, v)
 //         this.put_hc(k, nv)
 //         this.indexes.append_c(nv)
@@ -93,7 +93,7 @@ HMap.prototype = {
     },
     put: function (key, val) {
         if (key.hash == null) {
-            key = this.master._put_create(key)
+            key = this.master.put_create(key)
         }
         this.put_hc(key.hash, key.col, val)
         return val
@@ -136,7 +136,7 @@ HMap.prototype = {
     },
     get: function (key) {
         if (!(key.hash >= 0)) {
-            key = this.master._put_create(key)
+            key = this.master.put_create(key)
         }
         return this.get_hc(key.hash, key.col)
     },
@@ -271,14 +271,12 @@ HMap.prototype = {
 
 function HSet (map) {
     this.map = map
+    this.master = this.map.master
 }
 
 HSet.prototype = {
     HALT: HALT,
     constructor: HSet,
-    get master () {
-        return this.map.master
-    },
 
     // public master (always returns the master, which may be the set itself)
     get: function (v) {
@@ -286,7 +284,7 @@ HSet.prototype = {
     },
     put: function (v) {
         if (!(v.hash >= 0)) {
-            v = this.map.master._put_create(v)
+            v = this.master.put_create(v)
         }
         this.map.put_hc(v.hash, v.col, v, null)
         return v
@@ -344,7 +342,7 @@ MasterSet.prototype = extend(HSet.prototype, {
     hset: function (opt) {
         return new HSet(this.hmap(opt))
     },
-    _put_create: function (v) {
+    put_create: function (v) {
         if (this.value_fns.prep_fn) {
             v = this.value_fns.prep_fn(v)
         }
