@@ -72,13 +72,13 @@ function for_sparse_val (a, fn) {
 // })
 
 // values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
-function HMap (master, opt) {
+function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
     this.opt = opt
-    this.master = master        // master key-generator (assigns hash/col)
-    this.by_hash = []
-    this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this.h_arr = []
-    this.c_arr = []
+    this.master = master                // master key-generator (assigns hash/col)
+    this.by_hash = by_hash
+    this.by_hash_col = by_hash_col      // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
+    this.h_arr = h_arr
+    this.c_arr = c_arr
 }
 
 HMap.prototype = {
@@ -90,6 +90,26 @@ HMap.prototype = {
         return this.h_arr.length === 0
             ? undefined
             : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
+    },
+    clear: function () {
+        this.by_hash.length = 0
+        this.by_hash_col.length = 0
+        this.h_arr.length = 0
+        this.c_arr.length = 0
+    },
+    cop: function (n) {
+        if (n != null) {
+            var q = n < 0 ? -1 : n
+            q >= this.length || err('map only supports full copy (n >= length): ' + n)
+        }
+        return new HMap(
+            this.master,
+            this.by_hash.slice(),
+            this.by_hash_col.slice(),
+            this.h_arr.slice(),
+            this.c_arr.slice(),
+            this.opt
+        )
     },
     put: function (key, val) {
         if (key.hash == null) {
@@ -330,13 +350,13 @@ function MasterSet (value_fns, opt) {
     value_fns.put_merge_fn || err('no put_merge function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
-    HSet.call(this, new HMap(this, this.opt))
+    HSet.call(this, new HMap(this, [], [], [], [], this.opt))
 }
 
 MasterSet.prototype = extend(HSet.prototype, {
     constructor: MasterSet,
     hmap: function (opt) {
-        return new HMap(this, assign({}, this.opt, opt))
+        return new HMap(this, [], [], [], [], assign({}, this.opt, opt))
     },
     // return a new set that delegates to this or this master for calls to put_create
     hset: function (opt) {
