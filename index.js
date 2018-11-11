@@ -326,20 +326,18 @@ MasterSet.prototype = extend(HSet.prototype, {
         } else if (!this.value_fns.equal_fn(prev, v)) {
             // find matching collision value
             prev = undefined
-            var ci = 0
             var collisions = map.by_hash_col[hash]
             if (collisions !== undefined) {
-                while (ci < collisions.length) {
-                    if(this.value_fns.equal_fn(collisions[ci], v)) {
-                        prev = collisions[ci]
+                while (col < collisions.length) {
+                    if(this.value_fns.equal_fn(collisions[col], v)) {
+                        prev = collisions[col]
                         break
                     }
-                    ci++
+                    col++
                 }
             }
-            col = ci + 1   // collision number starts at 1 in the collisions map
+            col = col + 1   // collision number starts at 1 in the collisions map
             if (prev === undefined) {
-                // new collision
                 new_val = v
             }
         }
