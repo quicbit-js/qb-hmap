@@ -337,12 +337,10 @@ MasterSet.prototype = extend(HSet.prototype, {
                     ci++
                 }
             }
+            col = ci + 1   // collision number starts at 1 in the collisions map
             if (prev === undefined) {
                 // new collision
-                col = ci + 1        // collision number starts at 1 in the collisions map
                 new_val = v
-            } else {
-                col = ci
             }
         }
         v = this.value_fns.put_merge_fn(hash, col, prev, new_val)
