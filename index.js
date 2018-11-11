@@ -318,11 +318,12 @@ MasterSet.prototype = extend(HSet.prototype, {
         var map = this.map
         var hash = this.value_fns.hash_fn(v)
         var prev = map.by_hash[hash]
+        var ret
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, prev, v))
+            ret = map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, prev, v))
         } else if (this.value_fns.equal_fn(prev, v)) {
             // allow put_merge_fn to process previous value, but don't let it be changed
-            return this.value_fns.put_merge_fn(hash, 0, prev, null)
+            ret = this.value_fns.put_merge_fn(hash, 0, prev, null)
         } else {
             prev = undefined
             var col = 0
@@ -336,12 +337,13 @@ MasterSet.prototype = extend(HSet.prototype, {
                 }
             }
             if (prev === undefined) {
-                return map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
+                // new collision
+                ret = map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
             } else {
-                return this.value_fns.put_merge_fn(hash, col, prev, null)
+                ret = this.value_fns.put_merge_fn(hash, col, prev, null)
             }
-            // new collision
         }
+        return ret
     }
 })
 
