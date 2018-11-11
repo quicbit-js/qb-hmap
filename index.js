@@ -91,11 +91,12 @@ HMap.prototype = {
             ? undefined
             : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
     },
-    put: function (key, val, put_merge_fn) {
+    put: function (key, val) {
         if (key.hash == null) {
             key = this.master._put_create(key)
         }
-        return this.put_hc(key.hash, key.col, val, put_merge_fn)
+        this.put_hc(key.hash, key.col, val)
+        return val
     },
     // put_merge_fn (h, c, prev, v) can manage behavior and updates for colliding and new values.
     // When a value is put, put_merge is called on previous and new values and the value returned
@@ -108,18 +109,15 @@ HMap.prototype = {
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
-            if (val !== prev) {
-                this.by_hash[h] = val
-            }
+            if (val !== prev) { this.by_hash[h] = val }  // checking val !== prev is a significant performance improvement
         } else if (c > 0) {
             var cols = this.by_hash_col[h]
             if (!cols) {
                 cols = this.by_hash_col[h] = []
+                cols[c - 1] = val
             } else {
                 prev = cols[c - 1]
-            }
-            if (val !== prev) {
-                cols[c - 1] = val
+                if (val !== prev) { cols[c - 1] = val }
             }
         } else {
             err ('invalid collision: ' + c)
