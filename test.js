@@ -234,9 +234,6 @@ test('hmap put_hc', function (t) {
         [ 1,   0,   'e', 0,       [ 'e', ['a', 'e', 'c', 'd'] ] ],
         [ 1,   4,   'e', 0,       [ 'e', ['a', 'b', 'c', 'd', 'e'] ] ],
         [ 1,   3,   'e', 0,       [ 'e', ['a', 'b', 'e', 'd'] ] ],
-        [ 1,   0,   'e', 1,       [ 'f', ['a', 'f', 'c', 'd'] ] ],
-        [ 1,   4,   'e', 1,       [ 'f', ['a', 'b', 'c', 'd', 'f'] ] ],
-        [ 1,   3,   'e', 1,       [ 'f', ['a', 'b', 'f', 'd'] ] ],
     ], function (h, c, v, plus1) {
         var map = create_map(map_vals)
         var ret = map.put_hc(h, c, v, plus1 ? create_plus_one : null)

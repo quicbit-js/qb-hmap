@@ -41,14 +41,13 @@ function HMap (master, opt) {
     this.master = master        // master key-generator (assigns hash/col)
     this.by_hash = []
     this.by_hash_col = []           // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this.len = 0
     this.indexes = []
 }
 
 HMap.prototype = {
     HALT: HALT,
     constructor: HMap,
-    get length () { return this.len },
+    get length () { return this.indexes.length },
     get first () {
         var idx = this.indexes[0]
         return idx && this.get_hc(idx[0], idx[1])
@@ -70,16 +69,12 @@ HMap.prototype = {
     // is placed in the map (replacement) if it is !== previous.
     // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
     // the work of MasterSet to create objects after determining hash values.
-    put_hc: function (h, c, val, put_merge_fn) {
+    put_hc: function (h, c, val) {
         val !== undefined || err('cannot put undefined value')
-        if (this.opt.prep_fn) {
-            val = this.opt.prep_fn(val)
-        }
         h >= 0 || err('invalid hash: ' + h)
         var prev
         if (c === 0) {
             prev = this.by_hash[h]
-            if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
                 this.by_hash[h] = val
             }
@@ -90,7 +85,6 @@ HMap.prototype = {
             } else {
                 prev = cols[c - 1]
             }
-            if (put_merge_fn) { val = put_merge_fn(h, c, prev, val) }
             if (val !== prev) {
                 cols[c - 1] = val
             }
@@ -99,10 +93,7 @@ HMap.prototype = {
         }
 
         if (prev === undefined) {
-            if (this.indexes !== null) {
-                this.indexes.push([h, c])
-            }
-            this.len++
+            this.indexes.push([h, c])
         }
         return val
     },
@@ -328,11 +319,10 @@ MasterSet.prototype = extend(HSet.prototype, {
         var hash = this.value_fns.hash_fn(v)
         var prev = map.by_hash[hash]
         if (prev === undefined ) {
-            return map.put_hc(hash, 0, v, this.value_fns.put_merge_fn)
+            return map.put_hc(hash, 0, this.value_fns.put_merge_fn(hash, 0, prev, v))
         } else if (this.value_fns.equal_fn(prev, v)) {
             // allow put_merge_fn to process previous value, but don't let it be changed
-            this.value_fns.put_merge_fn(hash, 0, prev, null)
-            return prev
+            return this.value_fns.put_merge_fn(hash, 0, prev, null)
         }
         var col = 0
         var cols = map.by_hash_col[hash]
@@ -342,12 +332,11 @@ MasterSet.prototype = extend(HSet.prototype, {
             if (col < cols.length) {
                 prev = map.by_hash_col[hash][col] || err('expected previous value at ' + hash + ':' + col)
                 // allow put_merge_fn to process previous value, but don't let the value be changed
-                this.value_fns.put_merge_fn(hash, col, prev, null)
-                return prev
+                return this.value_fns.put_merge_fn(hash, col, prev, null)
             }
         }
         // new collision
-        return map.put_hc(hash, col + 1, v, this.value_fns.put_merge_fn)   // collision is index + 1
+        return map.put_hc(hash, col+1, this.value_fns.put_merge_fn(hash, col+1, undefined, v))   // collision is index + 1
     }
 })
 
