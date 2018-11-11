@@ -124,7 +124,6 @@ HMap.prototype = {
         }
 
         if (prev === undefined) {
-            if (this.first === undefined) { this.first = val}
             this.h_arr.push(h)
             this.c_arr.push(c)
         }
