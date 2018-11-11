@@ -35,6 +35,42 @@ function for_sparse_val (a, fn) {
     })
 }
 
+// var scom = require('qb-seq-common')
+// function MapSeq (master, opt) {
+//     HMap.call(this, master, opt)
+//     if (opt && opt.create_val_fn) {
+//         this.create_val = opt.create_val_fn
+//     }
+// }
+//
+// MapSeq.prototype = extend(scom.Sequence.prototype, HMap.prototype, {
+//     constructor: MapSeq,
+//     append_c: function (v, c) {
+//         var k = this.master._put_create(v)
+//         var nv = this.create_val(k, v)
+//         this.put_hc(k, nv)
+//         this.indexes.append_c(nv)
+//         return this
+//     },
+//     create_val: function (k, v) {
+//         return v
+//     },
+//     put_hc: function (h, c, val) {
+//         if (c === 0) {
+//             this.by_hash[h] = val
+//         } else if (c > 0) {
+//             var cols = this.by_hash_col[h]
+//             if (!cols) {
+//                 cols = this.by_hash_col[h] = []
+//             }
+//             cols[c - 1] = val
+//         } else {
+//             err ('invalid collision: ' + c)
+//         }
+//         return val
+//     },
+// })
+
 // values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
 function HMap (master, opt) {
     this.opt = opt
@@ -138,9 +174,10 @@ HMap.prototype = {
                     return false
                 }
             } else {
+                // collision
                 var ahash = aind[i][0]
                 var acol = aind[i][1]
-                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol-1])) {
+                if (!(b.by_hash_col[ahash] && b.by_hash_col[ahash][acol - 1])) {
                     return false
                 }
             }
@@ -455,4 +492,5 @@ module.exports = {
     last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
+    seq: function (master, opt) { return new MapSeq(master, opt) },
 }
