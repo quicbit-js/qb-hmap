@@ -485,6 +485,7 @@ function StrBuf (hash, col, src, off, lim) {
 
 StrBuf.prototype = {
     constructor: StrBuf,
+    get raw_array () { return this.src },           // raw_array "interface" - along with off and lim.
     toString: buf_to_str,
     to_obj: buf_to_str,
 }
