@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "qb-assign": "^1.0.1",
-    "qb-extend-flat": "^2.0.2"
+    "qb-extend-flat": "^2.0.2",
+    "qb1-type-base": "^1.1.0"
   },
   "scripts": {
     "test": "tape test.js",

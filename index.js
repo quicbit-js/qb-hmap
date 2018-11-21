@@ -16,6 +16,8 @@
 
 var assign = require('qb-assign')
 var extend = require('qb-extend-flat')
+var tbase = require('qb1-type-base')
+var STR_TYPE = tbase.lookup('str')
 
 // create hash from previous, buffer, and tcode
 function hash (a, b) {
@@ -35,42 +37,6 @@ function for_sparse_val (a, fn) {
     })
 }
 
-// var scom = require('qb-seq-common')
-// function MapSeq (master, opt) {
-//     HMap.call(this, master, opt)
-//     if (opt && opt.create_val_fn) {
-//         this.create_val = opt.create_val_fn
-//     }
-// }
-//
-// MapSeq.prototype = extend(scom.Sequence.prototype, HMap.prototype, {
-//     constructor: MapSeq,
-//     append_c: function (v, c) {
-//         var k = this.master.put_create(v)
-//         var nv = this.create_val(k, v)
-//         this.put_hc(k, nv)
-//         this.indexes.append_c(nv)
-//         return this
-//     },
-//     create_val: function (k, v) {
-//         return v
-//     },
-//     put_hc: function (h, c, val) {
-//         if (c === 0) {
-//             this.by_hash[h] = val
-//         } else if (c > 0) {
-//             var cols = this.by_hash_col[h]
-//             if (!cols) {
-//                 cols = this.by_hash_col[h] = []
-//             }
-//             cols[c - 1] = val
-//         } else {
-//             err ('invalid collision: ' + c)
-//         }
-//         return val
-//     },
-// })
-
 // values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
 function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
     this.opt = opt
@@ -79,6 +45,7 @@ function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
     this.by_hash_col = by_hash_col      // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
     this.h_arr = h_arr
     this.c_arr = c_arr
+    this.vtype = opt.vtype || null
 }
 
 HMap.prototype = {
@@ -350,6 +317,7 @@ function MasterSet (value_fns, opt) {
     value_fns.put_merge_fn || err('no put_merge function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
+    this.vtype = opt.vtype || null
     HSet.call(this, new HMap(this, [], [], [], [], this.opt))
 }
 
@@ -465,7 +433,7 @@ function string_set (opt) {
             return new StrBuf(hash, col, src, off, lim)
         },
     }
-    return new MasterSet(assign({}, default_fns), assign({}, opt))
+    return new MasterSet(assign({}, default_fns), assign({}, opt, {vtype: STR_TYPE}))
 }
 
 function buf_to_str () {
@@ -514,5 +482,4 @@ module.exports = {
     last: last,
     set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
     string_set: string_set,
-    seq: function (master, opt) { return new MapSeq(master, opt) },
 }
