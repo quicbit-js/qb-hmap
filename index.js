@@ -17,6 +17,8 @@
 var assign = require('qb-assign')
 var extend = require('qb-extend-flat')
 var tbase = require('qb1-type-base')
+var obj2type = require('qb1-obj2type')
+var TYPES_BY_NAME = tbase.types_by_all_names()
 var STR_TYPE = tbase.lookup('str')
 
 // create hash from previous, buffer, and tcode
@@ -39,6 +41,9 @@ function for_sparse_val (a, fn) {
 
 // values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
 function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
+    if (opt.vtype && !opt.vtype.base) {
+        opt.vtype = TYPES_BY_NAME[opt.vtype] || obj2type(opt.vtype).root
+    }
     this.opt = opt
     this.master = master                // master key-generator (assigns hash/col)
     this.by_hash = by_hash
@@ -264,6 +269,7 @@ function HSet (map) {
 HSet.prototype = {
     HALT: HALT,
     constructor: HSet,
+    get vtype () { return this.map.vtype },
 
     // public master (always returns the master, which may be the set itself)
     get: function (v) {
@@ -317,7 +323,6 @@ function MasterSet (value_fns, opt) {
     value_fns.put_merge_fn || err('no put_merge function') // fn (hash, col, prev, v) prepare/transform a value for storage
     this.value_fns = assign({}, value_fns)
     this.opt = assign({}, opt)
-    this.vtype = opt.vtype || null
     HSet.call(this, new HMap(this, [], [], [], [], this.opt))
 }
 

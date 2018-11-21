@@ -13,6 +13,7 @@
   "dependencies": {
     "qb-assign": "^1.0.1",
     "qb-extend-flat": "^2.0.2",
+    "qb1-obj2type": "^1.0.0",
     "qb1-type-base": "^1.1.0"
   },
   "scripts": {
