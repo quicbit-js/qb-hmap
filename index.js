@@ -457,6 +457,7 @@ function buf_to_str () {
 function StrBuf (hash, col, src, off, lim) {
     this.hash = hash
     this.col = col
+    this.idx = 0
     this.src = src.slice(off, lim)
     this.off = 0
     this.lim = this.src.length
