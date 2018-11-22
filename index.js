@@ -120,7 +120,11 @@ HMap.prototype = {
         } else {
             err ('invalid collision: ' + c)
         }
-        if (prev === undefined) { this.h_arr.push(h); this.c_arr.push(c) }
+        if (prev === undefined) {
+            val.idx = this.h_arr.length
+            this.h_arr.push(h)
+            this.c_arr.push(c)
+        }
     },
     // put all keys and values of the given object
     put_obj: function (obj) {

@@ -157,12 +157,12 @@ test('hmap vals', function (t) {
 
 test('hmap to_obj', function (t) {
     t.table_assert([
-        [ 'master_vals', 'master_opt',          'hmap_vals',    'to_obj_opt',           'exp' ],
-        [ [ 'a' ],       null,                  { a: 1 },       null,                   [ [{hash:1,col:0,v:'a'}, 1] ] ],
-        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, null,                   [ [{hash:1,col:0,v:'a'}, 1], [{hash:2,col:0,v:'b'}, 2] ] ],
-        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, {include_stats:1},      [ [{hash:1,col:0,v:'a'}, 1], [{hash:2,col:0,v:'b'}, 2] ] ],
-        [ [ 'a' ],       { support_to_obj: 1 }, { a: 1 },       null,                   { a: 1 } ],
-        [ [ 'a', 'd' ],  { support_to_obj: 1 }, { a: 1, d: 2 }, {include_stats:1},      { a: 1, d: 2, $collisions: 2 } ],
+        [ 'master_vals', 'master_opt',          'hmap_vals',    'to_obj_opt',         'exp' ],
+        [ [ 'a' ],       null,                  { a: 1 },       null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1] ] ],
+        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
+        [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, { include_stats: 1 }, [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
+        [ [ 'a' ],       { support_to_obj: 1 }, { a: 1 },       null,                 { a: 1 } ],
+        [ [ 'a', 'd' ],  { support_to_obj: 1 }, { a: 1, d: 2 }, { include_stats: 1 }, { a: 1, d: 2, $collisions: 2 } ],
     ], function (master_vals, master_opt, hmap_vals, to_obj_opt) {
         var master = set_mod3(master_opt)
         var map = master.hmap()
@@ -260,14 +260,14 @@ test('hset', function (t) {
     t.table_assert([
         [ 'keys',                 'exp' ],
         [ [],                     [] ],
-        [ [ 'a' ],                [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'a' ],           [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'b' ],           [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'b', 'a' ],      [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'd' ],           [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'a' ],      [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'g' ],      [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
-        [ [ 'a', 'd', 'g', 'd' ], [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
+        [ [ 'a' ],                [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'a' ],           [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'b' ],           [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+        [ [ 'a', 'b', 'a' ],      [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+        [ [ 'a', 'd' ],           [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1} ] ],
+        [ [ 'a', 'd', 'a' ],      [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1} ] ],
+        [ [ 'a', 'd', 'g' ],      [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1}, {hash: 1, col: 2, v: 'g', idx: 2} ] ],
+        [ [ 'a', 'd', 'g', 'd' ], [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1}, {hash: 1, col: 2, v: 'g', idx: 2} ] ],
     ], function (keys) {
         var set = set_mod3()
         keys.forEach(function (k) { set.put(k) })
@@ -277,12 +277,12 @@ test('hset', function (t) {
 
 test('hset put existing', function (t) {
     t.table_assert([
-        [ 'keys',                 'opt', 'exp' ],
-        [ [],                     null,  [] ],
-        [ [ 'a' ],                null,  [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'a' ],           null,  [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'b' ],           null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'b', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
+        [ 'keys',            'opt', 'exp' ],
+        [ [],                null,  [] ],
+        [ [ 'a' ],           null,  [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'a' ],      null,  [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'b' ],      null,  [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+        [ [ 'a', 'b', 'a' ], null,  [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
     ], function (keys) {
         var set1 = set_mod3()
         var objs = keys.map(function (k) { return set1.put(k) })
@@ -295,15 +295,15 @@ test('hset put existing', function (t) {
 test('hset to_obj()', function (t) {
     t.table_assert([
         [ 'keys',                 'support_to_obj', 'exp' ],
-        [ [],                     0,                 [] ],
-        [ [ 'a' ],                0,              [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'a' ],           0,              [ {hash: 1, col: 0, v: 'a'} ] ],
-        [ [ 'a', 'b' ],           0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'b', 'a' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 2, col: 0, v: 'b'} ] ],
-        [ [ 'a', 'd' ],           0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'a' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'} ] ],
-        [ [ 'a', 'd', 'g' ],      0,              [ {hash: 1, col: 0, v: 'a'}, {hash: 1, col: 1, v: 'd'}, {hash: 1, col: 2, v: 'g'} ] ],
-        [ [ 'a', 'd', 'g', 'd' ], 1,              [ 'a', 'd', 'g' ] ],
+        [ [],                     0,                [] ],
+        [ [ 'a' ],                0,                [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'a' ],           0,                [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+        [ [ 'a', 'b' ],           0,                [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+        [ [ 'a', 'b', 'a' ],      0,                [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+        [ [ 'a', 'd' ],           0,                [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1} ] ],
+        [ [ 'a', 'd', 'a' ],      0,                [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1} ] ],
+        [ [ 'a', 'd', 'g' ],      0,                [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 1, col: 1, v: 'd', idx: 1}, {hash: 1, col: 2, v: 'g', idx: 2} ] ],
+        [ [ 'a', 'd', 'g', 'd' ], 1,                [ 'a', 'd', 'g' ] ],
     ], function (keys, support_to_obj) {
         var kset = set_mod3({support_to_obj: support_to_obj})
         keys.forEach(function (k) { kset.put(k) })
