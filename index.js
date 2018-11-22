@@ -48,9 +48,11 @@ function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
     this.master = master                // master key-generator (assigns hash/col)
     this.by_hash = by_hash
     this.by_hash_col = by_hash_col      // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this.h_arr = h_arr
-    this.c_arr = c_arr
     this.vtype = opt.vtype || null
+
+    // these arrays maintain insertion order and allow fast iteration
+    this.h_arr = h_arr                  // hashes in insertion order
+    this.c_arr = c_arr                  // collisions in insertion order
 }
 
 HMap.prototype = {

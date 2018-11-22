@@ -8,13 +8,13 @@
   "repository": "quicbit-js/qb-hmap",
   "devDependencies": {
     "tape": "^4.8.0",
-    "test-kit": "^2.8.6"
+    "test-kit": "^2.8.7"
   },
   "dependencies": {
     "qb-assign": "^1.0.1",
     "qb-extend-flat": "^2.0.2",
     "qb1-obj2type": "^1.0.0",
-    "qb1-type-base": "^1.1.0"
+    "qb1-type-base": "file:../qb1-type-base"
   },
   "scripts": {
     "test": "tape test.js",
