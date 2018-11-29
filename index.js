@@ -408,14 +408,14 @@ function string_set (opt) {
         prep_fn: function (src) {
             var ret = src
             if (src.src) {
-                src.src.length != null || err('invalid src.src: ' + src)
-                src.off != null || err('missing src.off')
-                src.lim != null || err('missing src.lim')
+                src.src.length != null || err('invalid string object (src.src): ' + src)
+                src.off != null || err('missing string "off"')
+                src.lim != null || err('missing string "lim"')
             } else {
                 if (typeof src === 'string') {
                     ret = Buffer.from(src)
                 } else {
-                    Array.isArray(src) || ArrayBuffer.isView(src) || err('invalid src: ' + src)
+                    Array.isArray(src) || ArrayBuffer.isView(src) || err('invalid string src object: ' + src)
                 }
             }
             return ret
@@ -465,6 +465,7 @@ function StrBuf (hash, col, src, off, lim) {
 
 StrBuf.prototype = {
     constructor: StrBuf,
+    $type: 'str',
     get raw_array () { return this.src },           // raw_array "interface" - along with off and lim.
     toString: buf_to_str,
     to_obj: buf_to_str,
