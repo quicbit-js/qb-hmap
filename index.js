@@ -1,6 +1,6 @@
 // Software License Agreement (ISC License)
 //
-// Copyright (c) 2018, Matthew Voss
+// Copyright (c) 2023, Matthew Voss
 //
 // Permission to use, copy, modify, and/or distribute this software for
 // any purpose with or without fee is hereby granted, provided that the
@@ -16,10 +16,6 @@
 
 var assign = require('qb-assign')
 var extend = require('qb-extend-flat')
-var tbase = require('qb1-type-base')
-var obj2type = require('qb1-obj2type')
-var TYPES_BY_NAME = tbase.types_by_all_names()
-var STR_TYPE = tbase.lookup('str')
 
 // create hash from previous, buffer, and tcode
 function hash (a, b) {
@@ -39,16 +35,12 @@ function for_sparse_val (a, fn) {
     })
 }
 
-// values stored by hash, then by collision 'col'.  master resolves and holds all keys (assigns hash/collision)
-function HMap (master, by_hash, by_hash_col, h_arr, c_arr, opt) {
-    if (opt.vtype && !opt.vtype.base) {
-        opt.vtype = TYPES_BY_NAME[opt.vtype] || obj2type(opt.vtype).root
-    }
+// values stored by hash, then by collision 'col'.  all_keys resolves and holds all keys (assigns hash/collision)
+function HMap (all_keys, by_hash, by_hash_col, h_arr, c_arr, opt) {
     this.opt = opt
-    this.master = master                // master key-generator (assigns hash/col)
+    this.all_keys = all_keys            // main key-generator (assigns hash/col)
     this.by_hash = by_hash
     this.by_hash_col = by_hash_col      // [hash][collision - 1] tuple  (collision 0 is in the by_hash array)
-    this.vtype = opt.vtype || null
 
     // these arrays maintain insertion order and allow fast iteration
     this.h_arr = h_arr                  // hashes in insertion order
@@ -77,7 +69,7 @@ HMap.prototype = {
             q >= this.length || err('map only supports full copy (n >= length): ' + n)
         }
         return new HMap(
-            this.master,
+            this.all_keys,
             this.by_hash.slice(),
             this.by_hash_col.slice(),
             this.h_arr.slice(),
@@ -87,7 +79,7 @@ HMap.prototype = {
     },
     put: function (key, val) {
         if (key.hash == null) {
-            key = this.master.put_create(key)
+            key = this.all_keys.put_create(key)
         }
         this.put_hc(key.hash, key.col, val)
         return val
@@ -96,7 +88,7 @@ HMap.prototype = {
     // When a value is put, put_merge is called on previous and new values and the value returned
     // is placed in the map (replacement) if it is !== previous.
     // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
-    // the work of MasterSet to create objects after determining hash values.
+    // the work of SuperSet to create objects after determining hash values.
     put_hc: function (h, c, val) {
         val !== undefined || err('cannot put undefined value')
         h >= 0 || err('invalid hash: ' + h)
@@ -129,12 +121,12 @@ HMap.prototype = {
     // put all keys and values of the given object
     put_obj: function (obj) {
         var self = this
-        var kset = this.master
+        var kset = this.all_keys
         Object.keys(obj).forEach(function (k) { self.put(kset.put(k), obj[k]) })
     },
     get: function (key) {
         if (!(key.hash >= 0)) {
-            key = this.master.put_create(key)
+            key = this.all_keys.put_create(key)
         }
         return this.get_hc(key.hash, key.col)
     },
@@ -178,7 +170,7 @@ HMap.prototype = {
     },
     for_key_val: function (fn) { return this._for_key_val(fn, true) },
     for_key: function (fn) {
-        var key_set = this.master
+        var key_set = this.all_keys
         var harr = this.h_arr
         var carr = this.c_arr
         var len = harr.length
@@ -191,7 +183,7 @@ HMap.prototype = {
     },
     for_val: function (fn) { return this._for_key_val(fn, false) },
     _for_key_val: function (fn, with_keys) {
-        var key_set = with_keys ? this.master : null
+        var key_set = with_keys ? this.all_keys : null
         var harr = this.h_arr
         var carr = this.c_arr
         var len = harr.length
@@ -269,21 +261,19 @@ HMap.prototype = {
 
 function HSet (map) {
     this.map = map
-    this.master = this.map.master
+    this.all_keys = this.map.all_keys
 }
 
 HSet.prototype = {
     HALT: HALT,
     constructor: HSet,
-    get vtype () { return this.map.vtype },
-
-    // public master (always returns the master, which may be the set itself)
+    // public all_keys (always returns the all_keys, which may be the set itself)
     get: function (v) {
         return this.map.get(v)
     },
     put: function (v) {
         if (!(v.hash >= 0)) {
-            v = this.master.put_create(v)
+            v = this.all_keys.put_create(v)
         }
         this.map.put_hc(v.hash, v.col, v, null)
         return v
@@ -322,8 +312,8 @@ HSet.prototype = {
     }
 }
 
-// the master set is populated with all values in any offspring sets and hmaps.
-function MasterSet (value_fns, opt) {
+// the SuperSet is populated with all keys and values in any offspring sets and hmaps.
+function SuperSet (value_fns, opt) {
     value_fns.hash_fn || err('no hash function')     // fn (v)        hash input value to integer
     value_fns.equal_fn || err('no equal function')   // fn (prev, v)  compare previous stored object with new value
     value_fns.put_merge_fn || err('no put_merge function') // fn (hash, col, prev, v) prepare/transform a value for storage
@@ -332,12 +322,12 @@ function MasterSet (value_fns, opt) {
     HSet.call(this, new HMap(this, [], [], [], [], this.opt))
 }
 
-MasterSet.prototype = extend(HSet.prototype, {
-    constructor: MasterSet,
+SuperSet.prototype = extend(HSet.prototype, {
+    constructor: SuperSet,
     hmap: function (opt) {
         return new HMap(this, [], [], [], [], assign({}, this.opt, opt))
     },
-    // return a new set that delegates to this or this master for calls to put_create
+    // return a new set that delegates to this or this.all_keys for calls to put_create
     hset: function (opt) {
         return new HSet(this.hmap(opt))
     },
@@ -444,7 +434,7 @@ function string_set (opt) {
             return new StrBuf(hash, col, src, off, lim)
         },
     }
-    return new MasterSet(assign({}, default_fns), assign({}, opt, {vtype: STR_TYPE}))
+    return new SuperSet(assign({}, default_fns), assign({}, opt))
 }
 
 function buf_to_str () {
@@ -493,6 +483,6 @@ module.exports = {
     for_val: for_val,
     first: first,
     last: last,
-    set: function (master_fns, opt) { return new MasterSet(master_fns, assign({}, opt)) },
+    set: function (value_fns, opt) { return new SuperSet(value_fns, assign({}, opt)) },
     string_set: string_set,
 }

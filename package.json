@@ -1,20 +1,20 @@
 {
   "name": "qb-hmap",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "qb-hmap",
   "homepage": "https://github.com/quicbit-js/qb-hmap",
   "url": "https://github.com/quicbit-js/qb-hmap/issues",
   "email": "support@quicbit.com",
   "repository": "quicbit-js/qb-hmap",
   "devDependencies": {
-    "tape": "^4.8.0",
-    "test-kit": "^2.8.7"
+    "tape": "^5.6.3",
+    "test-kit": "^2.9.2"
   },
   "dependencies": {
     "qb-assign": "^1.0.1",
     "qb-extend-flat": "^2.0.2",
     "qb1-obj2type": "^1.0.0",
-    "qb1-type-base": "file:../qb1-type-base"
+    "qb1-type-base": "^1.1.0"
   },
   "scripts": {
     "test": "tape test.js",

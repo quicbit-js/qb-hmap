@@ -1,6 +1,6 @@
 // Software License Agreement (ISC License)
 //
-// Copyright (c) 2018, Matthew Voss
+// Copyright (c) 2023, Matthew Voss
 //
 // Permission to use, copy, modify, and/or distribute this software for
 // any purpose with or without fee is hereby granted, provided that the
@@ -157,15 +157,15 @@ test('hmap vals', function (t) {
 
 test('hmap to_obj', function (t) {
     t.table_assert([
-        [ 'master_vals', 'master_opt',          'hmap_vals',    'to_obj_opt',         'exp' ],
+        [ 'super_vals', 'super_opt',          'hmap_vals',    'to_obj_opt',         'exp' ],
         [ [ 'a' ],       null,                  { a: 1 },       null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1] ] ],
         [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
         [ [ 'a', 'b' ],  null,                  { a: 1, b: 2 }, { include_stats: 1 }, [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
         [ [ 'a' ],       { support_to_obj: 1 }, { a: 1 },       null,                 { a: 1 } ],
         [ [ 'a', 'd' ],  { support_to_obj: 1 }, { a: 1, d: 2 }, { include_stats: 1 }, { a: 1, d: 2, $collisions: 2 } ],
-    ], function (master_vals, master_opt, hmap_vals, to_obj_opt) {
-        var master = set_mod3(master_opt)
-        var map = master.hmap()
+    ], function (super_vals, super_opt, hmap_vals, to_obj_opt) {
+        var superset = set_mod3(super_opt)
+        var map = superset.hmap()
         map.put_obj(hmap_vals)
         return map.to_obj(to_obj_opt)
     })
@@ -376,14 +376,14 @@ test('first and last functions', function (t) {
 })
 
 test('first and last', function (t) {
-    var master = hmap.string_set()
-    var set1 = master.hset()
+    var superset = hmap.string_set()
+    var set1 = superset.hset()
 
-    var abc = ['a','b','c'].map(function (v) {return master.put(v).to_obj()})
+    var abc = ['a','b','c'].map(function (v) {return superset.put(v).to_obj()})
     t.same(abc, ['a','b','c'])
-    t.same(master.to_obj(), ['a','b','c'], 'to_obj()')
-    t.same(master.first.to_obj(), 'a', 'first()')
-    t.same(master.last.to_obj(), 'c', 'last()')
+    t.same(superset.to_obj(), ['a','b','c'], 'to_obj()')
+    t.same(superset.first.to_obj(), 'a', 'first()')
+    t.same(superset.last.to_obj(), 'c', 'last()')
 
     t.same(set1.first, undefined, 'first() undefined')
     t.same(set1.last, undefined, 'last() undefined')
@@ -392,18 +392,18 @@ test('first and last', function (t) {
 })
 
 test('various put and get', function (t) {
-    var master = hmap.string_set()
-    var set1 = master.hset()
+    var superset = hmap.string_set()
+    var set1 = superset.hset()
     var aa = set1.put('aa')
     t.same(set1.to_obj(), ['aa'])
 
-    var set2 = master.hset()
+    var set2 = superset.hset()
     set2.put_all(set1)
 
     t.same(set2.get(aa).to_obj(), 'aa')
 
-    var bb = master.put('bb')
-    var cc = master.put('cc')
+    var bb = superset.put('bb')
+    var cc = superset.put('cc')
 
     set2.put_all([bb, cc])
     t.same(set2.get(bb).to_obj(), 'bb')
@@ -412,29 +412,29 @@ test('various put and get', function (t) {
 })
 
 test('same_hashes', function (t) {
-    var master = hmap.string_set()
-    var set1 = master.hset()
+    var superset = hmap.string_set()
+    var set1 = superset.hset()
 
-    t.same(master.same_hashes(set1), true)
-    t.same(set1.same_hashes(master), true)
-    t.same(set1.same_hashes(master.map), true)
+    t.same(superset.same_hashes(set1), true)
+    t.same(set1.same_hashes(superset), true)
+    t.same(set1.same_hashes(superset.map), true)
 
-    var xxx = master.put('xxx')
+    var xxx = superset.put('xxx')
 
-    t.same(master.map.same_hashes(set1), false)
-    t.same(set1.map.same_hashes(master), false)
-    t.same(set1.map.same_hashes(master.map), false)
+    t.same(superset.map.same_hashes(set1), false)
+    t.same(set1.map.same_hashes(superset), false)
+    t.same(set1.map.same_hashes(superset.map), false)
 
     set1.put('yyy')
-    t.same(master.map.same_hashes(set1), false)
-    t.same(set1.map.same_hashes(master), false)
+    t.same(superset.map.same_hashes(set1), false)
+    t.same(set1.map.same_hashes(superset), false)
 
     set1.put(xxx)
-    t.same(master.map.same_hashes(set1), true)
-    t.same(set1.map.same_hashes(master), true)
+    t.same(superset.map.same_hashes(set1), true)
+    t.same(set1.map.same_hashes(superset), true)
 
     // make different sets, but having the same hash array length (same highest value)
-    var set2 = master.hset()
+    var set2 = superset.hset()
     set2.put_all(set1)
     var a = set1.put('a')
     var b = set2.put('b')
