@@ -65,7 +65,7 @@ HMap.prototype = {
   },
   cop: function (n) {
     if (n != null) {
-      var q = n < 0 ? -1 : n
+      var q = n < 0 ? -n : n
       q >= this.length || err('map only supports full copy (n >= length): ' + n)
     }
     return new HMap(
@@ -168,7 +168,6 @@ HMap.prototype = {
     }
     return true
   },
-  for_key_val: function (fn) { return this._for_key_val(fn, true) },
   for_key: function (fn) {
     var key_set = this.all_keys
     var harr = this.h_arr
@@ -181,6 +180,7 @@ HMap.prototype = {
       }
     }
   },
+  for_key_val: function (fn) { return this._for_key_val(fn, true) },
   for_val: function (fn) { return this._for_key_val(fn, false) },
   _for_key_val: function (fn, with_keys) {
     var key_set = with_keys ? this.all_keys : null
@@ -293,6 +293,8 @@ HSet.prototype = {
   get length () { return this.map.length },
   get first () { return this.map.first },
   get last () { return this.map.last },
+  clear: function () { this.map.clear() },
+  cop: function (n) { return new HSet(this.map.cop(n)) },
   get_hc: function (h, c) { return this.map.get_hc(h, c) },
   same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
   for_val: function (fn) { this.map.for_val(fn) },

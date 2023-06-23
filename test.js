@@ -2,7 +2,7 @@
 //
 // Copyright (c) 2023, Matthew Voss
 //
-// Permission to use, copy, modify, and/or distribute this software for
+// Permission to use, copy, modify, and/or distribute this software 
 // any purpose with or without fee is hereby granted, provided that the
 // above copyright notice and this permission notice appear in all copies.
 //
@@ -101,23 +101,23 @@ test('hmap for_val', function (t) {
 
 test('hmap for_key_val', function (t) {
   t.table_assert([
-    ['hc_vals', 'halt', 'opt', 'exp'],
-    [[[0, 0, 'a']], 9, null, [[0, 0], 'a']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], 9, null, [[0, 0], 'a', [1, 0], 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 9, { insert_order: 0 }, [[0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 0, null, []],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 1, null, [[0, 0], 'a']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 2, null, [[0, 0], 'a', [1, 0], 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 4, { insert_order: 0 }, [[0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd']],
-    [[[0, 0, 'a']], 9, { insert_order: 1 }, [[0, 0], 'a']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], 9, { insert_order: 1 }, [[0, 0], 'a', [1, 0], 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 9, { insert_order: 1 }, [[0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 0, { insert_order: 1 }, []],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 1, { insert_order: 1 }, [[0, 0], 'a']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 2, { insert_order: 1 }, [[0, 0], 'a', [1, 0], 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 4, { insert_order: 1 }, [[0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd']],
-  ], function (hc_vals, halt, opt) {
-    var map = create_map(hc_vals, opt)
+    [ 'hc_vals',                                              'halt', 'exp' ],
+    [ [ [0, 0, 'a'] ],                                        9,      [ [0, 0], 'a' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      [ [0, 0], 'a', [1, 0], 'c' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,      [] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,      [ [0, 0], 'a' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      [ [0, 0], 'a', [1, 0], 'b' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
+    [ [ [0, 0, 'a'] ],                                        9,      [ [0, 0], 'a' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      [ [0, 0], 'a', [1, 0], 'c' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 9,      [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 0,      [] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 1,      [ [0, 0], 'a' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 2,      [ [0, 0], 'a', [1, 0], 'b' ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      [ [0, 0], 'a', [1, 0], 'b', [1, 2], 'c', [1, 1], 'd' ] ],
+  ], function (hc_vals, halt) {
+    var map = create_map(hc_vals)
     var ret = []
     map.for_key_val(function (k, v, i) {
       if (i === halt) {
@@ -130,39 +130,84 @@ test('hmap for_key_val', function (t) {
   })
 })
 
+
+test('hmap for_key (without all_keys set)', function (t) {
+  t.table_assert([
+    [ 'hc_vals',                                              'halt', 'exp' ],
+    [ [ [0, 0, 'a'] ],                                        9,      [ [0, 0] ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c'] ],              9,      [ [0, 0], [1, 0] ] ],
+    [ [ [0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd'] ], 4,      [ [0, 0], [1, 0], [1, 2], [1, 1]] ],
+  ], function (hc_vals, halt) {
+    var map = create_map(hc_vals)
+    var ret = []
+    map.for_key(function (k, i) {
+      if (i === halt) {
+        return map.HALT
+      }
+      ret.push(k)
+    })
+    return ret
+  })
+})
+
+test('hmap for_key (with all_keys set)', function (t) {
+  t.table_assert([
+    [ 'hc_vals',                    'halt', 'exp' ],
+    [ {a:1},                        9,      [ 'a' ] ],
+    [ {a:1, b:2, c:3},              9,      [ 'a', 'b', 'c' ] ],
+    [ {a:1, b:2, c:3},              1,      [ 'a'] ],
+  ], function (keyvals, halt) {
+    let ss = hmap.string_set()
+    let map = ss.hmap()
+    Object.keys(keyvals).forEach((k) => {
+      map.put(k, keyvals[k])
+    })
+
+    var ret = []
+    map.for_key(function (k, i) {
+      if (i === halt) {
+        return map.HALT
+      }
+      ret.push(k.src.toString())
+    })
+    return ret
+  })
+})
+
+
 test('hmap vals', function (t) {
   t.table_assert([
-    ['hc_vals', 'opt', 'exp'],
-    [[[0, 0, 'a']], null, ['a']],
-    [[[1, 0, 'b']], null, ['b']],
-    [[[0, 0, 'a'], [1, 0, 'b']], null, ['a', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c']], null, ['c', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b']], null, ['b', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], null, ['a', 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c']], null, ['a', 'b', 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c']], null, ['a', 'b', 'c']],
-    [[[0, 0, 'a']], { insert_order: 1 }, ['a']],
-    [[[1, 0, 'b']], { insert_order: 1 }, ['b']],
-    [[[0, 0, 'a'], [1, 0, 'b']], { insert_order: 1 }, ['a', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c']], { insert_order: 1 }, ['c', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b']], { insert_order: 1 }, ['b', 'b']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], { insert_order: 1 }, ['a', 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c']], { insert_order: 1 }, ['a', 'b', 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c']], { insert_order: 1 }, ['a', 'b', 'c']],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], { insert_order: 1 }, ['a', 'b', 'c', 'd']],
-  ], function (hc_vals, opt) {
-    return create_map(hc_vals, opt).vals()
+    ['hc_vals', 'exp'],
+    [[[0, 0, 'a']], ['a']],
+    [[[1, 0, 'b']], ['b']],
+    [[[0, 0, 'a'], [1, 0, 'b']], ['a', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c']], ['c', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b']], ['b', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], ['a', 'c']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c']], ['a', 'b', 'c']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c']], ['a', 'b', 'c']],
+    [[[0, 0, 'a']], ['a']],
+    [[[1, 0, 'b']], ['b']],
+    [[[0, 0, 'a'], [1, 0, 'b']], ['a', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'c']], ['c', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [0, 0, 'b']], ['b', 'b']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 0, 'c']], ['a', 'c']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 1, 'c']], ['a', 'b', 'c']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c']], ['a', 'b', 'c']],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], ['a', 'b', 'c', 'd']],
+  ], function (hc_vals) {
+    return create_map(hc_vals, null).vals()
   })
 })
 
 test('hmap to_obj', function (t) {
   t.table_assert([
-    ['super_vals', 'super_opt', 'hmap_vals', 'to_obj_opt', 'exp'],
-    [['a'], null, { a: 1 }, null, [[{ hash: 1, col: 0, v: 'a', idx: 0 }, 1]]],
-    [['a', 'b'], null, { a: 1, b: 2 }, null, [[{ hash: 1, col: 0, v: 'a', idx: 0 }, 1], [{ hash: 2, col: 0, v: 'b', idx: 1 }, 2]]],
-    [['a', 'b'], null, { a: 1, b: 2 }, { include_stats: 1 }, [[{ hash: 1, col: 0, v: 'a', idx: 0 }, 1], [{ hash: 2, col: 0, v: 'b', idx: 1 }, 2]]],
-    [['a'], { support_to_obj: 1 }, { a: 1 }, null, { a: 1 }],
-    [['a', 'd'], { support_to_obj: 1 }, { a: 1, d: 2 }, { include_stats: 1 }, { a: 1, d: 2, $collisions: 2 }],
+    [ 'super_vals', 'super_opt',           'hmap_vals',    'to_obj_opt',         'exp' ],
+    [ [ 'a' ],      null,                  { a: 1 },       null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1] ] ],
+    [ [ 'a', 'b' ], null,                  { a: 1, b: 2 }, null,                 [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
+    [ [ 'a', 'b' ], null,                  { a: 1, b: 2 }, { include_stats: 1 }, [ [{hash:1,col:0,v:'a',idx:0}, 1], [{hash:2,col:0,v:'b',idx:1}, 2] ] ],
+    [ [ 'a' ],      { support_to_obj: 1 }, { a: 1 },       null,                 { a: 1 } ],
+    [ [ 'a', 'd' ], { support_to_obj: 1 }, { a: 1, d: 2 }, { include_stats: 1 }, { a: 1, d: 2, $collisions: 2 } ],
   ], function (super_vals, super_opt, hmap_vals, to_obj_opt) {
     var superset = set_mod3(super_opt)
     var map = superset.hmap()
@@ -173,12 +218,12 @@ test('hmap to_obj', function (t) {
 
 test('hmap length', function (t) {
   t.table_assert([
-    ['hc_vals', 'opt', 'exp'],
-    [[[0, 0, 'a']], null, 1],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], null, 4],
-    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], { insert_order: 1 }, 4],
-  ], function (hc_vals, opt) {
-    return create_map(hc_vals, opt).length
+    ['hc_vals', 'exp'],
+    [[[0, 0, 'a']], 1],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 4],
+    [[[0, 0, 'a'], [1, 0, 'b'], [1, 2, 'c'], [1, 1, 'd']], 4],
+  ], function (hc_vals) {
+    return create_map(hc_vals).length
   })
 })
 
@@ -210,11 +255,11 @@ test('hmap put', function (t) {
     [1, 1, 'd']
   ]
   t.table_assert([
-    ['h', 'c', 'v', 'opt', 'exp'],
-    [1, 4, 'e', { insert_order: 0 }, ['e', ['a', 'b', 'c', 'd', 'e']]],
-    [1, 3, 'e', { insert_order: 0 }, ['e', ['a', 'b', 'e', 'd']]],
-  ], function (h, c, v, opt) {
-    var map = create_map(map_vals, opt)
+    ['h', 'c', 'v', 'exp'],
+    [1, 4, 'e', ['e', ['a', 'b', 'c', 'd', 'e']]],
+    [1, 3, 'e', ['e', ['a', 'b', 'e', 'd']]],
+  ], function (h, c, v) {
+    var map = create_map(map_vals, null)
     var ret = map.put({ hash: h, col: c }, v)
     return [ret, map.vals()]
   })
@@ -277,12 +322,12 @@ test('hset', function (t) {
 
 test('hset put existing', function (t) {
   t.table_assert([
-    ['keys', 'opt', 'exp'],
-    [[], null, []],
-    [['a'], null, [{ hash: 1, col: 0, v: 'a', idx: 0 }]],
-    [['a', 'a'], null, [{ hash: 1, col: 0, v: 'a', idx: 0 }]],
-    [['a', 'b'], null, [{ hash: 1, col: 0, v: 'a', idx: 0 }, { hash: 2, col: 0, v: 'b', idx: 1 }]],
-    [['a', 'b', 'a'], null, [{ hash: 1, col: 0, v: 'a', idx: 0 }, { hash: 2, col: 0, v: 'b', idx: 1 }]],
+    [ 'keys',            'exp' ],
+    [ [],                [] ],
+    [ [ 'a' ],           [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+    [ [ 'a', 'a' ],      [ {hash: 1, col: 0, v: 'a', idx: 0} ] ],
+    [ [ 'a', 'b' ],      [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
+    [ [ 'a', 'b', 'a' ], [ {hash: 1, col: 0, v: 'a', idx: 0}, {hash: 2, col: 0, v: 'b', idx: 1} ] ],
   ], function (keys) {
     var set1 = set_mod3()
     var objs = keys.map(function (k) { return set1.put(k) })
@@ -391,7 +436,51 @@ test('first and last', function (t) {
   t.end()
 })
 
-test('various put and get', function (t) {
+test('clear', function (t) {
+  let s1 = hmap.string_set()
+  s1.put('one')
+  s1.put('two')
+  t.same(s1.to_obj(), [ 'one', 'two' ])
+  s1.clear()
+  t.same(s1.to_obj(), [])
+  t.end()
+})
+
+test('cop(y)', function (t) {
+  let ss = hmap.string_set()
+  let s1 = ss.hset()
+  let sblank = s1.cop(0)
+  t.same(sblank.to_obj(), [])
+
+  s1.put('one')
+  t.same(s1.to_obj(), ['one'])
+
+  let s2 = s1.cop()
+  let s3 = s2.cop(1)    // test n copy
+  t.same(s2.to_obj(), ['one'])
+  t.same(s3.to_obj(), ['one'])
+
+  s2.put('two')
+  t.same(s1.to_obj(), ['one'])
+  t.same(s2.to_obj(), ['one', 'two'])
+  t.same(s3.to_obj(), ['one'])
+
+  t.throws(function () {s2.cop(1)}, /map only supports full copy/, 'incorrect exception')
+  t.throws(function () {s2.cop(-1)}, /map only supports full copy/, 'incorrect exception')
+
+  t.end()
+})
+
+test('map put and get', function (t) {
+  var superset = hmap.string_set()
+  var m1 = superset.hmap()
+  var aa_val = m1.put('aa', 1)
+  t.same(m1.to_obj(), {aa: 1})
+  t.same(m1.get('aa'), aa_val)
+  t.end()
+})
+
+test('set put and get', function (t) {
   var superset = hmap.string_set()
   var set1 = superset.hset()
   var aa = set1.put('aa')
