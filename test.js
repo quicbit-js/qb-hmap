@@ -20,7 +20,7 @@ var hmap = require('.')
 function create_map(hc_vals, opt) {
     var map = hmap.string_set(opt).hmap()
     hc_vals.forEach(function (hcv) {
-        map.put_hc(hcv[0], hcv[1], hcv[2])
+        map.put_hc(...hcv)
     })
     return map
 }
