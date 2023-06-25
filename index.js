@@ -35,7 +35,10 @@ function for_sparse_val (a, fn) {
   })
 }
 
-// values stored by hash, then by collision 'col'.  all_keys resolves and holds all keys (assigns hash/collision)
+// Values stored by hash, then by collision 'col'.  all_keys resolves and holds all keys (assigns hash/collision).
+// by_hash_col stores and array of values with colliding  with the first value. So by_hash holds the first value
+// and if there are collisions, by_hash_col holds the second, third, fourth... values that collide. by_hash_col[h] 
+// has nothing (is undefined) the vast majority of the time.
 function HMap (all_keys, by_hash, by_hash_col, h_arr, c_arr, opt) {
   this.opt = opt
   this.all_keys = all_keys            // main key-generator (assigns hash/col)
@@ -84,11 +87,6 @@ HMap.prototype = {
     this.put_hc(key.hash, key.col, val)
     return val
   },
-  // put_merge_fn (h, c, prev, v) can manage behavior and updates for colliding and new values.
-  // When a value is put, put_merge is called on previous and new values and the value returned
-  // is placed in the map (replacement) if it is !== previous.
-  // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
-  // the work of SuperSet to create objects after determining hash values.
   put_hc: function (h, c, val) {
     val !== undefined || err('cannot put undefined value')
     h >= 0 || err('invalid hash: ' + h)
@@ -428,7 +426,12 @@ function string_set (opt) {
       else { off = 0; lim = src.length }
       return buf_equal(buf_obj.src, buf_obj.off, buf_obj.lim, src, off, lim)
     },
-    put_merge_fn: function (hash, col, prev, src) {
+  // put_merge_fn (h, c, prev, v) can manage behavior and updates for colliding and new values.
+  // When a value is put, put_merge is called on previous and new values and the value returned
+  // is placed in the map (replacement) if it is !== previous.
+  // Allowing the put_merge to be injected here instead of storing and paramaterizing simplifies
+  // the work of SuperSet to create objects after determining hash values.
+  put_merge_fn: function (hash, col, prev, src) {
       if (prev) { return prev }
       var off, lim
       if (src.src) { off = src.off; lim = src.lim; src = src.src }

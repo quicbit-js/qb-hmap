@@ -272,9 +272,6 @@ test('hmap put_hc', function (t) {
     [1, 3, 'c'],
     [1, 1, 'd']
   ]
-  function create_plus_one (h, c, prev, val) {
-    return String.fromCharCode(val.charCodeAt(0) + 1)
-  }
   t.table_assert([
     ['h', 'c', 'v', 'exp'],
     [1, 0, 'e', ['a', 'e', 'c', 'd']],
