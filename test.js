@@ -372,18 +372,6 @@ test('hset length', function (t) {
   })
 })
 
-test('for_val function', function (t) {
-  var set1 = hmap.string_set()
-  var vals = ['a', 'b']
-  hmap.for_val(vals, function (v, i) { t.same(vals[i], v, 'array iteration') })
-  hmap.for_val(vals, function (v) {
-    set1.put(v)
-  })
-  t.same(set1.to_obj(), vals, 'set has all values')
-
-  hmap.for_val(set1, function (v, i) { t.same(v.toString(), vals[i], 'vals[' + i + ']') })
-  t.end()
-})
 
 test('find', function (t) {
   t.table_assert([
@@ -399,38 +387,6 @@ test('find', function (t) {
     var res = set.find(function (v) { return v.v === find_val })
     return res && res.v || null
   })
-})
-
-test('first and last functions', function (t) {
-  t.table_assert([
-    ['keys', 'exp'],
-    [[], [undefined, undefined]],
-    // [ [ 'a' ],                 ['a', 'a'] ],
-    [['a', 'b', 'a'], ['a', 'b']],
-    [['a', 'b', 'c'], ['a', 'c']],
-    [['a', 'b', 'c', 'a'], ['a', 'c']],
-  ], function (vals) {
-    var set = hmap.string_set()
-    vals.forEach(function (v) { set.put(v) })
-
-    return [hmap.first(set) && hmap.first(set).toString(), hmap.last(set) && hmap.last(set).toString()]
-  })
-})
-
-test('first and last', function (t) {
-  var superset = hmap.string_set()
-  var set1 = superset.hset()
-
-  var abc = ['a', 'b', 'c'].map(function (v) { return superset.put(v).to_obj() })
-  t.same(abc, ['a', 'b', 'c'])
-  t.same(superset.to_obj(), ['a', 'b', 'c'], 'to_obj()')
-  t.same(superset.first.to_obj(), 'a', 'first()')
-  t.same(superset.last.to_obj(), 'c', 'last()')
-
-  t.same(set1.first, undefined, 'first() undefined')
-  t.same(set1.last, undefined, 'last() undefined')
-  t.same(set1.to_obj(), [], 'to_obj() empty')
-  t.end()
 })
 
 test('clear', function (t) {

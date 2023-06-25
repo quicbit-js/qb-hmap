@@ -54,12 +54,6 @@ HMap.prototype = {
   HALT: HALT,
   constructor: HMap,
   get length () { return this.h_arr.length },
-  get first () { return this.h_arr.length === 0 ? undefined : this.get_hc(this.h_arr[0], this.c_arr[0]) },
-  get last () {
-    return this.h_arr.length === 0
-      ? undefined
-      : this.get_hc(this.h_arr[this.h_arr.length - 1], this.c_arr[this.c_arr.length - 1])
-  },
   clear: function () {
     this.by_hash.length = 0
     this.by_hash_col.length = 0
@@ -289,8 +283,6 @@ HSet.prototype = {
     }
   },
   get length () { return this.map.length },
-  get first () { return this.map.first },
-  get last () { return this.map.last },
   clear: function () { this.map.clear() },
   cop: function (n) { return new HSet(this.map.cop(n)) },
   get_hc: function (h, c) { return this.map.get_hc(h, c) },
@@ -465,28 +457,9 @@ StrBuf.prototype = {
   to_obj: buf_to_str,
 }
 
-function for_val (a, fn) {
-  if (a.for_val) {
-    a.for_val(fn)
-  } else {
-    a.forEach(fn)
-  }
-}
-
-function first (a) {
-  return a.first ? a.first : a[0]
-}
-
-function last (a) {
-  return a.last ? a.last : a[a.length - 1]
-}
-
 module.exports = {
   HALT: HALT,
   hash: hash,
-  for_val: for_val,
-  first: first,
-  last: last,
   set: function (value_fns, opt) { return new SuperSet(value_fns, assign({}, opt)) },
   string_set: string_set,
 }
