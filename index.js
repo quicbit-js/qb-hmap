@@ -17,14 +17,6 @@
 var assign = require('qb-assign')
 var extend = require('qb-extend-flat')
 
-// create hash from previous, buffer, and tcode
-function hash (a, b) {
-  // h = ((h << 5) + h) + src[i]                 // djb2 - by berstein 269/289741 (3.0 seconds)
-  // h = ((h * 33) ^ src[i])                     // xor - by berstein 251/289741 (2.8 seconds)
-  // h = (h << 6) + (h << 16) - h + src[i]       // sdbm 3/289741 (3.5 seconds)
-  return 0x7FFFFFFF & ((a * 33) ^ b)          // xor - by berstein
-}
-
 function err (msg) { throw Error(msg) }
 var HALT = {}           // object for stopping for_val processing
 
@@ -54,6 +46,12 @@ HMap.prototype = {
   HALT: HALT,
   constructor: HMap,
   get length () { return this.h_arr.length },
+  get first () { return this.h_arr.length === 0 ? undefined : this.get_hc(this.h_arr[0], this.c_arr[0]) },
+  get last () {
+      return this.h_arr.length === 0
+          ? undefined
+          : this.get_hc(this.h_arr[this.h_arr.length-1], this.c_arr[this.c_arr.length - 1])
+  },
   clear: function () {
     this.by_hash.length = 0
     this.by_hash_col.length = 0
@@ -283,9 +281,13 @@ HSet.prototype = {
     }
   },
   get length () { return this.map.length },
+  get first () { return this.map.first },
+  get last () { return this.map.last },
   clear: function () { this.map.clear() },
   cop: function (n) { return new HSet(this.map.cop(n)) },
   get_hc: function (h, c) { return this.map.get_hc(h, c) },
+  get first () { return this.map.first },
+  get last () { return this.map.last },
   same_hashes: function (b) { return this.map.same_hashes(b.map || b) },
   for_val: function (fn) { this.map.for_val(fn) },
   find: function (fn) { return this.map.find(fn) },
@@ -457,9 +459,27 @@ StrBuf.prototype = {
   to_obj: buf_to_str,
 }
 
+function for_val (a, fn) {
+    if (a.for_val) {
+        a.for_val(fn)
+    } else {
+        a.forEach(fn)
+    }
+}
+
+function first (a) {
+    return a.first ? a.first : a[0]
+}
+
+function last (a) {
+    return a.last ? a.last : a[a.length-1]
+}
+
 module.exports = {
   HALT: HALT,
-  hash: hash,
+  for_val: for_val,
+  first: first,
+  last: last,
   set: function (value_fns, opt) { return new SuperSet(value_fns, assign({}, opt)) },
   string_set: string_set,
 }
