@@ -10,14 +10,14 @@
     "url": "git+https://github.com/quicbit-js/qb-hmap.git"
   },
   "devDependencies": {
-    "tape": "^5.6.3",
+    "tape": "^5.7.4",
     "test-kit": "^2.9.2"
   },
   "dependencies": {
-    "qb-assign": "^1.0.1",
-    "qb-extend-flat": "^2.0.2",
-    "qb1-obj2type": "^1.0.0",
-    "qb1-type-base": "^1.1.0"
+    "qb-assign": "^1.0.2",
+    "qb-extend-flat": "^2.0.3",
+    "qb1-obj2type": "^1.0.1",
+    "qb1-type-base": "^1.2.0"
   },
   "scripts": {
     "test": "tape test.js",
