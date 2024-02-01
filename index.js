@@ -17,6 +17,14 @@
 var assign = require('qb-assign')
 var extend = require('qb-extend-flat')
 
+// create hash from previous, buffer, and tcode
+function hash (a, b) {
+  // h = ((h << 5) + h) + src[i]                 // djb2 - by berstein 269/289741 (3.0 seconds)
+  // h = ((h * 33) ^ src[i])                     // xor - by berstein 251/289741 (2.8 seconds)
+  // h = (h << 6) + (h << 16) - h + src[i]       // sdbm 3/289741 (3.5 seconds)
+  return 0x7FFFFFFF & ((a * 33) ^ b)          // xor - by berstein
+}
+
 function err (msg) { throw Error(msg) }
 var HALT = {}           // object for stopping for_val processing
 
@@ -451,6 +459,7 @@ StrBuf.prototype = {
 
 module.exports = {
   HALT: HALT,
+  hash: hash,
   set: function (value_fns, opt) { return new SuperSet(value_fns, assign({}, opt)) },
   string_set: string_set,
 }
