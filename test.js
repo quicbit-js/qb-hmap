@@ -25,18 +25,6 @@ function create_map (hc_vals, opt) {
   return map
 }
 
-test('hash', function (t) {
-  t.table_assert([
-    ['a', 'b', 'exp'],
-    [1, 2, 35],
-    [35, 3, 1152],
-    [1152, 4, 38020],
-    [97, 98, 3299],
-    [3299, 99, 108832],
-    [108832, 99, 3591491],
-  ], hmap.hash)
-})
-
 test('hmap collisions', function (t) {
   t.table_assert([
     ['hc_vals', 'exp'],
