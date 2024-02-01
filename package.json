@@ -5,7 +5,10 @@
   "homepage": "https://github.com/quicbit-js/qb-hmap",
   "url": "https://github.com/quicbit-js/qb-hmap/issues",
   "email": "support@quicbit.com",
-  "repository": "quicbit-js/qb-hmap",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quicbit-js/qb-hmap.git"
+  },
   "devDependencies": {
     "tape": "^5.6.3",
     "test-kit": "^2.9.2"
@@ -18,7 +21,9 @@
   },
   "scripts": {
     "test": "tape test.js",
-    "cov": "tap --coverage-report=html test.js"
+    "cov": "tap --coverage-report=html test.js",
+    "preversion": "npm test",
+    "postversion": "git push && npm publish"
   },
   "keywords": [
     "fast",
